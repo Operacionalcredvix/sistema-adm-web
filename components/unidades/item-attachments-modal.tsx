@@ -24,6 +24,39 @@ type ItemAttachmentsModalProps = {
   onDeleteAttachment: (attachment: AttachmentRecord) => Promise<void>;
 };
 
+const MAX_ATTACHMENT_SIZE_MB = 10;
+const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
+
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+]);
+
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(["pdf", "png", "jpg", "jpeg"]);
+
+function getFileExtension(fileName: string) {
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot < 0) return "";
+  return fileName.slice(lastDot + 1).toLowerCase();
+}
+
+function validateAttachmentFile(file: File) {
+  const extension = getFileExtension(file.name);
+  const hasAllowedType = ALLOWED_ATTACHMENT_TYPES.has(file.type);
+  const hasAllowedExtension = ALLOWED_ATTACHMENT_EXTENSIONS.has(extension);
+
+  if (!hasAllowedType && !hasAllowedExtension) {
+    return "Arquivo não permitido. Envie apenas PDF, PNG, JPG ou JPEG.";
+  }
+
+  if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+    return `Arquivo muito grande. O limite permitido é ${MAX_ATTACHMENT_SIZE_MB} MB.`;
+  }
+
+  return "";
+}
+
 export function ItemAttachmentsModal({
   open,
   itemName,
@@ -56,11 +89,40 @@ export function ItemAttachmentsModal({
     return new Date(value).toLocaleString("pt-BR");
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+
+    if (!file) {
+      setSelectedFile(null);
+      setMessage("");
+      return;
+    }
+
+    const validationMessage = validateAttachmentFile(file);
+
+    if (validationMessage) {
+      setSelectedFile(null);
+      event.target.value = "";
+      setMessage(validationMessage);
+      return;
+    }
+
+    setSelectedFile(file);
+    setMessage(`Arquivo selecionado: ${file.name} (${formatBytes(file.size)})`);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!selectedFile) {
-      setMessage("Selecione um arquivo antes de enviar.");
+      setMessage("Selecione um arquivo permitido antes de enviar.");
+      return;
+    }
+
+    const validationMessage = validateAttachmentFile(selectedFile);
+
+    if (validationMessage) {
+      setMessage(validationMessage);
       return;
     }
 
@@ -114,12 +176,20 @@ export function ItemAttachmentsModal({
                 id="attachment_file"
                 className="file-input"
                 type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+                accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                onChange={handleFileChange}
               />
+              <p className="muted-text">
+                Formatos permitidos: PDF, PNG, JPG ou JPEG. Limite: {MAX_ATTACHMENT_SIZE_MB} MB.
+              </p>
             </div>
 
             <div className="modal-actions">
-              <button className="btn btn-primary cta-primary-button" type="submit" disabled={loading}>
+              <button
+                className="btn btn-primary cta-primary-button"
+                type="submit"
+                disabled={loading || !selectedFile}
+              >
                 {loading ? "Enviando..." : "Enviar anexo"}
               </button>
             </div>
