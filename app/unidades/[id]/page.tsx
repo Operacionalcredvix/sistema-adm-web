@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -420,14 +420,6 @@ export default function UnidadeDetalhePage() {
   };
 
   const handleDeleteAttachment = async (attachment: AttachmentRecord) => {
-    const { error: storageError } = await supabase.storage
-      .from("anexos-ficha")
-      .remove([attachment.caminho_storage]);
-
-    if (storageError) {
-      throw new Error(storageError.message);
-    }
-
     const { error: updateError } = await supabase
       .from("anexo")
       .update({ ativo: false })
@@ -438,7 +430,7 @@ export default function UnidadeDetalhePage() {
     }
 
     await loadData();
-    setMessage("Anexo excluído com sucesso.");
+    setMessage("Anexo removido da ficha. O arquivo foi preservado no armazenamento.");
   };
 
   const buildSectionStats = (groupItems: FichaItem[]) => {
@@ -825,3 +817,4 @@ export default function UnidadeDetalhePage() {
     </AdminShell>
   );
 }
+

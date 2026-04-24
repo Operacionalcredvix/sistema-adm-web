@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { SimpleModal } from "@/components/ui/simple-modal";
@@ -142,7 +142,7 @@ export function ItemAttachmentsModal({
 
   const handleDelete = async (attachment: AttachmentRecord) => {
     const confirmed = window.confirm(
-      `Excluir o anexo "${attachment.nome_original}"?`
+      `Remover o anexo "${attachment.nome_original}" da ficha? O arquivo sera preservado no armazenamento.`
     );
 
     if (!confirmed) return;
@@ -154,7 +154,7 @@ export function ItemAttachmentsModal({
       await onDeleteAttachment(attachment);
       setMessage("Anexo excluído com sucesso.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Erro ao excluir anexo.");
+      setMessage(error instanceof Error ? error.message : "Erro ao remover anexo da ficha.");
     } finally {
       setDeletingId("");
     }
@@ -234,7 +234,7 @@ export function ItemAttachmentsModal({
                     disabled={deletingId === attachment.id}
                     onClick={() => handleDelete(attachment)}
                   >
-                    {deletingId === attachment.id ? "Excluindo..." : "Excluir"}
+                    {deletingId === attachment.id ? "Removendo..." : "Remover"}
                   </button>
                 </div>
               </article>
@@ -245,3 +245,4 @@ export function ItemAttachmentsModal({
     </SimpleModal>
   );
 }
+
