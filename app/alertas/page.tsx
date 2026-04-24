@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
@@ -83,7 +84,13 @@ export default function AlertasPage() {
         .order("nome_fantasia", { ascending: true });
 
       if (error) {
-        setMessage(error.message);
+        console.error("Erro ao carregar alertas:", error);
+        setMessage(
+          getFriendlyErrorMessage(
+            error,
+            "Não foi possível carregar os alertas. Tente atualizar a página."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -383,7 +390,7 @@ export default function AlertasPage() {
                   className="btn btn-primary"
                   onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
                 >
-                  Abrir unidade
+                  Abrir ficha
                 </button>
               </div>
             </article>

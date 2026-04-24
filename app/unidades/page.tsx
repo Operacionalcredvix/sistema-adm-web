@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
+import { DailyOnboardingModal } from "@/components/app/daily-onboarding-modal";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
 
 type UnidadeLista = {
@@ -28,6 +30,36 @@ export default function UnidadesPage() {
   const [userEmail, setUserEmail] = useState("");
   const [message, setMessage] = useState("");
   const [unidades, setUnidades] = useState<UnidadeLista[]>([]);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingStorageKey, setOnboardingStorageKey] = useState("");
+
+  const getTodayKey = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const maybeOpenDailyOnboarding = (userKey: string) => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = `sistema-adm:onboarding-diario:${userKey}:${getTodayKey()}`;
+    setOnboardingStorageKey(storageKey);
+
+    if (!window.localStorage.getItem(storageKey)) {
+      setOnboardingOpen(true);
+    }
+  };
+
+  const closeDailyOnboarding = () => {
+    if (typeof window !== "undefined" && onboardingStorageKey) {
+      window.localStorage.setItem(onboardingStorageKey, "visto");
+    }
+
+    setOnboardingOpen(false);
+  };
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -40,7 +72,9 @@ export default function UnidadesPage() {
         return;
       }
 
-      setUserEmail(session.user.email ?? "");
+      const email = session.user.email ?? "";
+      setUserEmail(email);
+      maybeOpenDailyOnboarding(session.user.id || email || "usuario");
 
       const { data, error } = await supabase
         .from("vw_unidades_lista")
@@ -51,7 +85,13 @@ export default function UnidadesPage() {
         .order("nome_fantasia", { ascending: true });
 
       if (error) {
-        setMessage(error.message);
+        console.error("Erro ao carregar unidades:", error);
+        setMessage(
+          getFriendlyErrorMessage(
+            error,
+            "Não foi possível carregar as unidades. Tente atualizar a página."
+          )
+        );
         setLoading(false);
         return;
       }
@@ -115,6 +155,8 @@ export default function UnidadesPage() {
 
   return (
     <AdminShell section="unidades">
+      <DailyOnboardingModal open={onboardingOpen} onClose={closeDailyOnboarding} />
+
       <AdminTopbar
         eyebrow="GRUPO APIS"
         title="Unidades"

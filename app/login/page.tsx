@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { AuthAccessCard } from "@/components/auth/auth-access-card";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -41,7 +42,13 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      console.error("Erro ao fazer login:", error);
+      setMessage(
+        getFriendlyErrorMessage(
+          error,
+          "Não foi possível entrar. Confira e-mail e senha e tente novamente."
+        )
+      );
       setLoading(false);
       return;
     }
