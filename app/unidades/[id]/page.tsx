@@ -58,6 +58,13 @@ const groupLabels: Record<string, string> = {
   seguros: "Seguros",
   operacional: "Operação e segurança",
 };
+const statusLabels: Record<string, string> = {
+  sim: "Aplicável",
+  nao: "Não se aplica",
+  nao_informado: "Não informado",
+};
+
+const getStatusLabel = (status: string) => statusLabels[status] ?? status;
 
 export default function UnidadeDetalhePage() {
   const router = useRouter();
@@ -281,6 +288,43 @@ export default function UnidadeDetalhePage() {
   const getItemAlerts = (tipoNome: string) =>
     alerts.filter((alert) => alert.tipo_nome === tipoNome);
 
+  const getItemAttachmentCount = (item: FichaItem | EditableItem) =>
+    (attachmentsByItem[item.item_ficha_id] ?? []).length;
+
+  const itemNeedsAction = (item: FichaItem | EditableItem) => {
+    const itemAlerts = getItemAlerts(item.tipo_nome);
+
+    return (
+      itemAlerts.length > 0 ||
+      item.status_aplicacao === "nao_informado" ||
+      getItemAttachmentCount(item) === 0
+    );
+  };
+
+  const getItemWorkScore = (item: FichaItem) => {
+    const itemAlerts = getItemAlerts(item.tipo_nome);
+
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "vencido")) return 10;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "vence_em_7_dias")) return 20;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "cadastro_incompleto")) return 30;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "sem_anexo")) return 40;
+    if (item.status_aplicacao === "nao_informado") return 50;
+    if (getItemAttachmentCount(item) === 0) return 60;
+
+    return 90;
+  };
+
+  const sortItemsForWork = (groupItems: FichaItem[]) =>
+    [...groupItems].sort((a, b) => {
+      const scoreDiff = getItemWorkScore(a) - getItemWorkScore(b);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      const orderDiff = a.ordem_exibicao - b.ordem_exibicao;
+      if (orderDiff !== 0) return orderDiff;
+
+      return a.tipo_nome.localeCompare(b.tipo_nome);
+    });
+
   const openEditItem = (item: FichaItem | EditableItem) => {
     setSelectedItem({
       item_ficha_id: item.item_ficha_id,
@@ -441,12 +485,14 @@ export default function UnidadeDetalhePage() {
     const itemsWithAttachments = groupItems.filter(
       (item) => (attachmentsByItem[item.item_ficha_id] ?? []).length > 0
     ).length;
+    const itemsNeedingAction = groupItems.filter((item) => itemNeedsAction(item)).length;
 
     return {
       totalItems,
       itemsWithAlerts,
       itemsWithAttachments,
       itemsWithoutAttachments: totalItems - itemsWithAttachments,
+      itemsNeedingAction,
     };
   };
 
@@ -552,7 +598,8 @@ export default function UnidadeDetalhePage() {
                   </span>
 
                   <div className="section-nav-metrics">
-                    <span className="mini-chip mini-chip-strong">Alertas: {stats.itemsWithAlerts}</span>
+                    <span className="mini-chip mini-chip-strong">Ação: {stats.itemsNeedingAction}</span>
+                    <span className="mini-chip">Alertas: {stats.itemsWithAlerts}</span>
                     <span className="mini-chip">Anexos: {stats.itemsWithAttachments}</span>
                     <span className="mini-chip">Sem anexo: {stats.itemsWithoutAttachments}</span>
                   </div>
@@ -662,7 +709,7 @@ export default function UnidadeDetalhePage() {
             </div>
 
             <div className="unit-grid">
-              {groupItems.map((item) => {
+              {sortItemsForWork(groupItems).map((item) => {
                 const itemAlerts = getItemAlerts(item.tipo_nome);
                 const rows = rowsForItem(item);
                 const itemAttachments = attachmentsByItem[item.item_ficha_id] ?? [];
@@ -672,7 +719,7 @@ export default function UnidadeDetalhePage() {
                     <div className="unit-card-head">
                       <div>
                         <h2>{item.tipo_nome}</h2>
-                        <p>Status: {item.status_aplicacao}</p>
+                        <p>Status: {getStatusLabel(item.status_aplicacao)}</p>
                       </div>
                       <div className="inline-actions">
                         <button
@@ -817,4 +864,5 @@ export default function UnidadeDetalhePage() {
     </AdminShell>
   );
 }
+
 

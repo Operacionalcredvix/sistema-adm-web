@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { AttachmentRecord } from "@/components/unidades/item-attachments-modal";
@@ -24,6 +24,7 @@ type SectionFichaItem = {
 
 type SectionAlert = {
   tipo_nome: string;
+  alerta_codigo?: string;
   alerta_titulo: string;
   severidade_visual: "alto" | "medio" | "baixo";
 };
@@ -40,6 +41,14 @@ type SectionEditModalProps = {
   onOpenAttachments: (args: { item_ficha_id: string; tipo_nome: string }) => void;
 };
 
+const statusLabels: Record<string, string> = {
+  sim: "Aplicável",
+  nao: "Não se aplica",
+  nao_informado: "Não informado",
+};
+
+const getStatusLabel = (status: string) => statusLabels[status] ?? status;
+
 export function SectionEditModal({
   open,
   title,
@@ -53,6 +62,43 @@ export function SectionEditModal({
 }: SectionEditModalProps) {
   const getAlertsForItem = (tipoNome: string) =>
     alerts.filter((alert) => alert.tipo_nome === tipoNome);
+
+  const getItemAttachmentCount = (item: SectionFichaItem) =>
+    (attachmentsByItem[item.item_ficha_id] ?? []).length;
+
+  const itemNeedsAction = (item: SectionFichaItem) => {
+    const itemAlerts = getAlertsForItem(item.tipo_nome);
+
+    return (
+      itemAlerts.length > 0 ||
+      item.status_aplicacao === "nao_informado" ||
+      getItemAttachmentCount(item) === 0
+    );
+  };
+
+  const getItemWorkScore = (item: SectionFichaItem) => {
+    const itemAlerts = getAlertsForItem(item.tipo_nome);
+
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "vencido")) return 10;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "vence_em_7_dias")) return 20;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "cadastro_incompleto")) return 30;
+    if (itemAlerts.some((alert) => alert.alerta_codigo === "sem_anexo")) return 40;
+    if (item.status_aplicacao === "nao_informado") return 50;
+    if (getItemAttachmentCount(item) === 0) return 60;
+
+    return 90;
+  };
+
+  const sortedItems = [...items].sort((a, b) => {
+    const scoreDiff = getItemWorkScore(a) - getItemWorkScore(b);
+    if (scoreDiff !== 0) return scoreDiff;
+
+    return a.tipo_nome.localeCompare(b.tipo_nome);
+  });
+
+  const itemsNeedingAction = items.filter((item) => itemNeedsAction(item)).length;
+  const itemsWithAlerts = items.filter((item) => getAlertsForItem(item.tipo_nome).length > 0).length;
+  const itemsWithAttachments = items.filter((item) => getItemAttachmentCount(item) > 0).length;
 
   return (
     <SimpleModal
@@ -68,33 +114,41 @@ export function SectionEditModal({
             <strong>{items.length}</strong>
           </div>
           <div className="section-manager-stat">
+            <span>Precisam de ação</span>
+            <strong>{itemsNeedingAction}</strong>
+          </div>
+          <div className="section-manager-stat">
             <span>Com alertas</span>
-            <strong>
-              {items.filter((item) => getAlertsForItem(item.tipo_nome).length > 0).length}
-            </strong>
+            <strong>{itemsWithAlerts}</strong>
           </div>
           <div className="section-manager-stat">
             <span>Com anexos</span>
-            <strong>
-              {items.filter((item) => (attachmentsByItem[item.item_ficha_id] ?? []).length > 0).length}
-            </strong>
+            <strong>{itemsWithAttachments}</strong>
           </div>
         </div>
 
         <div className="section-manager-list">
-          {items.map((item) => {
+          {sortedItems.map((item) => {
             const itemAlerts = getAlertsForItem(item.tipo_nome);
             const itemAttachments = attachmentsByItem[item.item_ficha_id] ?? [];
+            const needsAction = itemNeedsAction(item);
 
             return (
               <article className="section-manager-row" key={item.tipo_item_id}>
                 <div className="section-manager-main">
                   <div className="section-manager-head">
                     <strong>{item.tipo_nome}</strong>
-                    <span className="section-status-chip">{item.status_aplicacao}</span>
+                    <span className="section-status-chip">
+                      {getStatusLabel(item.status_aplicacao)}
+                    </span>
                   </div>
 
                   <div className="section-manager-badges">
+                    {needsAction ? (
+                      <span className="mini-chip mini-chip-strong">Precisa de ação</span>
+                    ) : (
+                      <span className="mini-chip">Em ordem</span>
+                    )}
                     <span className="mini-chip">{itemAlerts.length} alerta(s)</span>
                     <span className="mini-chip">{itemAttachments.length} anexo(s)</span>
                   </div>
