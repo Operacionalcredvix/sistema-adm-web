@@ -21,6 +21,7 @@ type AlertRow = {
 };
 
 type AlertMode = "operacional" | "cadastro";
+type OperationalFocus = "todos" | "aluguel";
 
 const alertCodeLabel: Record<string, string> = {
   vencido: "Vencido",
@@ -40,15 +41,38 @@ const modeConfig: Record<
   operacional: {
     title: "Alertas operacionais",
     description:
-      "Mostra apenas o que já venceu ou está prestes a vencer. É a visão correta para acompanhamento do dia a dia.",
+      "Foco em vencidos e próximos vencimentos. Use esta visão para a rotina real da operação.",
     allowedCodes: ["vencido", "vence_em_7_dias"],
   },
   cadastro: {
     title: "Pendências de cadastro",
     description:
-      "Mostra itens ainda incompletos ou sem anexo. Esta visão serve para implantação, saneamento e enriquecimento da ficha.",
+      "Itens incompletos ou sem anexo. Use esta visão para saneamento da base, não como urgência operacional.",
     allowedCodes: ["cadastro_incompleto", "sem_anexo"],
   },
+};
+
+const isAluguelAlert = (alert: AlertRow) =>
+  alert.tipo_nome.toLowerCase().includes("aluguel");
+
+const getActionText = (alert: AlertRow) => {
+  if (alert.alerta_codigo === "vencido") {
+    return "Atualizar pagamento ou revisar vencimento.";
+  }
+
+  if (alert.alerta_codigo === "vence_em_7_dias") {
+    return "Conferir se o pagamento já foi feito ou programar acompanhamento.";
+  }
+
+  if (alert.alerta_codigo === "cadastro_incompleto") {
+    return "Completar os campos principais da ficha.";
+  }
+
+  if (alert.alerta_codigo === "sem_anexo") {
+    return "Anexar documento essencial quando existir.";
+  }
+
+  return "Abrir a ficha e revisar este item.";
 };
 
 export default function AlertasPage() {
@@ -59,6 +83,7 @@ export default function AlertasPage() {
   const [search, setSearch] = useState("");
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [mode, setMode] = useState<AlertMode>("operacional");
+  const [operationalFocus, setOperationalFocus] = useState<OperationalFocus>("todos");
   const [severityFilter, setSeverityFilter] = useState<"todos" | "alto" | "medio" | "baixo">("todos");
   const [codeFilter, setCodeFilter] = useState<"todos" | "vencido" | "vence_em_7_dias" | "cadastro_incompleto" | "sem_anexo">("todos");
 
@@ -104,7 +129,14 @@ export default function AlertasPage() {
 
   useEffect(() => {
     setCodeFilter("todos");
+    setOperationalFocus("todos");
   }, [mode]);
+
+  const operationalAlerts = useMemo(() => {
+    return alerts.filter(
+      (a) => a.alerta_codigo === "vencido" || a.alerta_codigo === "vence_em_7_dias"
+    );
+  }, [alerts]);
 
   const alertsInMode = useMemo(() => {
     const allowed = new Set(modeConfig[mode].allowedCodes);
@@ -122,6 +154,10 @@ export default function AlertasPage() {
       const descricao = alert.alerta_descricao.toLowerCase();
 
       const matchMode = allowed.has(alert.alerta_codigo as any);
+      const matchOperationalFocus =
+        mode !== "operacional" ||
+        operationalFocus === "todos" ||
+        isAluguelAlert(alert);
       const matchSearch =
         !termo ||
         unidade.includes(termo) ||
@@ -135,21 +171,19 @@ export default function AlertasPage() {
       const matchCode =
         codeFilter === "todos" || alert.alerta_codigo === codeFilter;
 
-      return matchMode && matchSearch && matchSeverity && matchCode;
+      return matchMode && matchOperationalFocus && matchSearch && matchSeverity && matchCode;
     });
-  }, [alerts, search, severityFilter, codeFilter, mode]);
+  }, [alerts, search, severityFilter, codeFilter, mode, operationalFocus]);
 
   const resumoOperacional = useMemo(() => {
-    const rows = alerts.filter(
-      (a) => a.alerta_codigo === "vencido" || a.alerta_codigo === "vence_em_7_dias"
-    );
+    const rows = operationalAlerts;
     return {
       total: rows.length,
       vencidos: rows.filter((a) => a.alerta_codigo === "vencido").length,
       proximos: rows.filter((a) => a.alerta_codigo === "vence_em_7_dias").length,
-      unidades: new Set(rows.map((a) => a.unidade_id)).size,
+      alugueis: rows.filter((a) => isAluguelAlert(a)).length,
     };
-  }, [alerts]);
+  }, [operationalAlerts]);
 
   const resumoCadastro = useMemo(() => {
     const rows = alerts.filter(
@@ -179,8 +213,9 @@ export default function AlertasPage() {
       vence_em_7_dias: alertsInMode.filter((a) => a.alerta_codigo === "vence_em_7_dias").length,
       cadastro_incompleto: alertsInMode.filter((a) => a.alerta_codigo === "cadastro_incompleto").length,
       sem_anexo: alertsInMode.filter((a) => a.alerta_codigo === "sem_anexo").length,
+      aluguel: operationalAlerts.filter((a) => isAluguelAlert(a)).length,
     };
-  }, [alertsInMode]);
+  }, [alertsInMode, operationalAlerts]);
 
   const isOperational = mode === "operacional";
 
@@ -189,7 +224,7 @@ export default function AlertasPage() {
       <AdminTopbar
         eyebrow="ALERTAS E PENDÊNCIAS"
         title="Alertas"
-        subtitle="Agora separados entre operação real e pendência de cadastro."
+        subtitle="Foco operacional em vencimentos reais, com pendências de cadastro separadas."
         userEmail={userEmail}
         onLogout={handleLogout}
       />
@@ -199,7 +234,7 @@ export default function AlertasPage() {
           <UnitSummaryCard label="Total operacional" value={resumoOperacional.total} tone="primary" />
           <UnitSummaryCard label="Vencidos" value={resumoOperacional.vencidos} tone="danger" />
           <UnitSummaryCard label="Vencem em breve" value={resumoOperacional.proximos} tone="warning" />
-          <UnitSummaryCard label="Unidades impactadas" value={resumoOperacional.unidades} tone="default" />
+          <UnitSummaryCard label="Aluguéis em atenção" value={resumoOperacional.alugueis} tone="default" />
         </section>
       ) : (
         <section className="summary-grid">
@@ -242,8 +277,8 @@ export default function AlertasPage() {
           </strong>
           <p>
             {isOperational
-              ? "Aqui aparecem só alertas que exigem ação operacional imediata ou próxima."
-              : "Aqui aparecem pendências de preenchimento e documentação que ainda precisam ser regularizadas."}
+              ? "Aqui ficam vencidos e vencimentos próximos. Use o filtro de aluguéis para acompanhar o principal foco operacional do início do projeto."
+              : "Aqui aparecem dados faltantes. São importantes para completar a base, mas não devem ser confundidos com vencimento real."}
           </p>
         </div>
 
@@ -298,8 +333,11 @@ export default function AlertasPage() {
 
         <div className="alert-filter-chips">
           <button
-            className={`filter-chip ${codeFilter === "todos" ? "active" : ""}`}
-            onClick={() => setCodeFilter("todos")}
+            className={`filter-chip ${codeFilter === "todos" && operationalFocus === "todos" ? "active" : ""}`}
+            onClick={() => {
+              setCodeFilter("todos");
+              setOperationalFocus("todos");
+            }}
             type="button"
           >
             Todos ({alertsInMode.length})
@@ -308,15 +346,31 @@ export default function AlertasPage() {
           {isOperational ? (
             <>
               <button
-                className={`filter-chip ${codeFilter === "vencido" ? "active" : ""}`}
-                onClick={() => setCodeFilter("vencido")}
+                className={`filter-chip ${operationalFocus === "aluguel" ? "active" : ""}`}
+                onClick={() => {
+                  setOperationalFocus("aluguel");
+                  setCodeFilter("todos");
+                }}
+                type="button"
+              >
+                Aluguéis ({countsInMode.aluguel})
+              </button>
+              <button
+                className={`filter-chip ${codeFilter === "vencido" && operationalFocus === "todos" ? "active" : ""}`}
+                onClick={() => {
+                  setOperationalFocus("todos");
+                  setCodeFilter("vencido");
+                }}
                 type="button"
               >
                 Vencidos ({countsInMode.vencido})
               </button>
               <button
-                className={`filter-chip ${codeFilter === "vence_em_7_dias" ? "active" : ""}`}
-                onClick={() => setCodeFilter("vence_em_7_dias")}
+                className={`filter-chip ${codeFilter === "vence_em_7_dias" && operationalFocus === "todos" ? "active" : ""}`}
+                onClick={() => {
+                  setOperationalFocus("todos");
+                  setCodeFilter("vence_em_7_dias");
+                }}
                 type="button"
               >
                 Vencem em breve ({countsInMode.vence_em_7_dias})
@@ -355,7 +409,11 @@ export default function AlertasPage() {
         </section>
       ) : filteredAlerts.length === 0 ? (
         <section className="empty-state">
-          <p>Nenhum alerta encontrado com os filtros atuais.</p>
+          <p>
+            {isOperational
+              ? "Nenhum vencimento encontrado com os filtros atuais."
+              : "Nenhuma pendência de cadastro encontrada com os filtros atuais."}
+          </p>
         </section>
       ) : (
         <section className="alerts-grid">
@@ -381,6 +439,10 @@ export default function AlertasPage() {
               <p className="priority-alert-title">{alert.alerta_titulo}</p>
               <p className="priority-alert-desc">{alert.alerta_descricao}</p>
 
+              <div className="message-box">
+                <strong>Ação esperada:</strong> {getActionText(alert)}
+              </div>
+
               <div className="alert-card-footer">
                 <span className="priority-alert-date">
                   Data de referência: {formatDate(alert.data_referencia_alerta)}
@@ -390,7 +452,7 @@ export default function AlertasPage() {
                   className="btn btn-primary"
                   onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
                 >
-                  Abrir ficha
+                  Abrir ficha para atualizar
                 </button>
               </div>
             </article>
