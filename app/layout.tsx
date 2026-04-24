@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import "./cta-overrides.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "APIS Grupo | Sistema ADM",
-  description: "Gestão de fichas por unidade",
+  description: "Gestao de fichas por unidade",
 };
 
 export default function RootLayout({

@@ -1,0 +1,62 @@
+/*
+  Patch: CTAs amarelos e brilhantes nos modais do Sistema ADM.
+
+  Afeta principalmente:
+  - botao "Salvar item" do modal Editar item
+  - botao "Enviar anexo" do modal Anexos
+
+  Este arquivo deve ser importado depois de ./globals.css no app/layout.tsx.
+*/
+
+.modal-actions .btn.btn-primary.cta-primary-button,
+.sticky-modal-actions .btn.btn-primary.cta-primary-button,
+.attachment-upload-box .btn.btn-primary.cta-primary-button {
+  background: linear-gradient(135deg, #ffe08a 0%, #ffd24f 34%, #f7be21 68%, #e6ad10 100%) !important;
+  color: #080808 !important;
+  border: 1px solid rgba(255, 224, 138, 0.9) !important;
+  box-shadow:
+    0 0 0 1px rgba(247, 190, 33, 0.36),
+    0 12px 28px rgba(247, 190, 33, 0.36),
+    0 0 34px rgba(247, 190, 33, 0.32) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.modal-actions .btn.btn-primary.cta-primary-button:hover,
+.sticky-modal-actions .btn.btn-primary.cta-primary-button:hover,
+.attachment-upload-box .btn.btn-primary.cta-primary-button:hover {
+  background: linear-gradient(135deg, #fff1bf 0%, #ffe08a 36%, #ffd24f 72%, #f7be21 100%) !important;
+  border-color: rgba(255, 241, 191, 0.95) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 224, 138, 0.48),
+    0 16px 38px rgba(247, 190, 33, 0.46),
+    0 0 44px rgba(247, 190, 33, 0.42) !important;
+  transform: translateY(-1px);
+}
+
+.modal-actions .btn.btn-primary.cta-primary-button:focus-visible,
+.sticky-modal-actions .btn.btn-primary.cta-primary-button:focus-visible,
+.attachment-upload-box .btn.btn-primary.cta-primary-button:focus-visible {
+  outline: 3px solid rgba(255, 224, 138, 0.36);
+  outline-offset: 3px;
+}
+
+/*
+  Mantem o botao visivel mesmo quando estiver em estado disabled.
+  Observacao: se o botao continuar disabled, ele ficara amarelo, mas ainda nao sera clicavel.
+  Nesse caso o problema e de regra/logica do formulario, nao de cor.
+*/
+.modal-actions .btn.btn-primary.cta-primary-button:disabled,
+.sticky-modal-actions .btn.btn-primary.cta-primary-button:disabled,
+.attachment-upload-box .btn.btn-primary.cta-primary-button:disabled {
+  background: linear-gradient(135deg, #ffd24f 0%, #f7be21 55%, #d99f00 100%) !important;
+  color: #080808 !important;
+  border-color: rgba(247, 190, 33, 0.72) !important;
+  opacity: 0.72 !important;
+  cursor: not-allowed;
+  box-shadow:
+    0 0 0 1px rgba(247, 190, 33, 0.22),
+    0 8px 22px rgba(247, 190, 33, 0.2),
+    0 0 22px rgba(247, 190, 33, 0.18) !important;
+}
