@@ -11,6 +11,27 @@ type AdminTopbarProps = {
   actionsSlot?: React.ReactNode;
 };
 
+function formatUserGreeting(value?: string) {
+  if (!value) return "";
+
+  const rawName = value.includes("@") ? value.split("@")[0] : value;
+
+  const normalizedName = rawName
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalizedName) return value;
+
+  return normalizedName
+    .split(" ")
+    .map((part) => {
+      if (part.length <= 3) return part.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 export function AdminTopbar({
   eyebrow,
   title,
@@ -21,6 +42,8 @@ export function AdminTopbar({
   backLabel = "Voltar",
   actionsSlot,
 }: AdminTopbarProps) {
+  const greetingName = formatUserGreeting(userEmail);
+
   return (
     <header className="topbar surface">
       <div className="topbar-left">
@@ -33,7 +56,7 @@ export function AdminTopbar({
 
       <div className="topbar-right">
         {actionsSlot}
-        {userEmail ? <div className="user-badge">{userEmail}</div> : null}
+        {greetingName ? <div className="user-badge">Olá, {greetingName}!</div> : null}
 
         {onBack ? (
           <button className="btn btn-secondary" onClick={onBack}>

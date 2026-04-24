@@ -73,12 +73,9 @@ export default function LoginPage() {
         onEmailChange={setEmail}
         onPasswordChange={setPassword}
         onSubmit={handleLogin}
-        onSecondaryAction={() => router.push("/register")}
         submitLabel="Entrar"
         loadingSubmitLabel="Entrando..."
-        secondaryPrompt="Primeiro acesso neste projeto?"
-        secondaryActionLabel="Criar acesso →"
-        loadingSecondaryLabel="Abrindo..."
+        secondaryPrompt="Acesso restrito a usuários autorizados. Para criar ou liberar um usuário, solicite ao administrador do sistema."
       />
     </AuthShell>
   );

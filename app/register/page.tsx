@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { AuthAccessCard } from "@/components/auth/auth-access-card";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { apisAuthTheme, themeToCssVars } from "@/lib/auth-theme";
@@ -11,105 +8,50 @@ import { apisAuthTheme, themeToCssVars } from "@/lib/auth-theme";
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        router.replace("/unidades");
-      }
-    };
-
-    checkSession();
-  }, [router]);
-
-  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMessage("");
-
-    if (!fullName || !email || !password) {
-      setMessage("Preencha nome, e-mail e senha para criar o acesso.");
-      return;
-    }
-
-    setLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (error) {
-      setMessage(error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.session) {
-      router.replace("/unidades");
-      return;
-    }
-
-    setMessage("Acesso criado. Agora volte ao login para entrar.");
-    setLoading(false);
-  };
-
   return (
     <AuthShell styleVars={themeToCssVars(apisAuthTheme)}>
       <AuthBrandPanel
         logoSrc={apisAuthTheme.logoSrc}
         logoAlt={apisAuthTheme.logoAlt}
-        caption="Cadastro inicial do acesso ao sistema."
-        eyebrow="CRIAR ACESSO"
-        headline="Crie seu acesso com os dados certos e entre no sistema com segurança."
-        description="Nesta etapa, você cria o usuário de acesso. O nome será salvo no perfil do Auth e poderá ser usado depois na interface."
-        featureChips={["Cadastro separado", "Fluxo mais claro", "Base reutilizável"]}
+        caption="Cadastro público desativado neste ambiente."
+        eyebrow="ACESSO CONTROLADO"
+        headline="O acesso ao Sistema ADM é liberado apenas por autorização administrativa."
+        description="Esta proteção evita criação indevida de usuários em um sistema que já está em uso real pela operação."
+        featureChips={["Cadastro bloqueado", "Uso interno", "Acesso autorizado"]}
       />
 
-      <AuthAccessCard
-        systemName={apisAuthTheme.systemName}
-        organizationName={apisAuthTheme.organizationName}
-        title="Criar acesso"
-        description="Preencha seus dados para criar o usuário deste projeto."
-        email={email}
-        password={password}
-        message={message}
-        loading={loading}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onSubmit={handleRegister}
-        onSecondaryAction={() => router.push("/login")}
-        submitLabel="Criar acesso"
-        loadingSubmitLabel="Criando..."
-        secondaryPrompt="Já tem acesso?"
-        secondaryActionLabel="Voltar para login →"
-        loadingSecondaryLabel="Abrindo..."
-      >
-        <div className="field">
-          <label htmlFor="fullName">Nome</label>
-          <input
-            id="fullName"
-            type="text"
-            placeholder="Ex.: Gabriel"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            autoComplete="name"
-          />
+      <div className="auth-panel auth-form-panel">
+        <div className="auth-card">
+          <div className="brand-compact">
+            <h2>
+              <span>{apisAuthTheme.systemName}</span>
+            </h2>
+            <p>{apisAuthTheme.organizationName}</p>
+          </div>
+
+          <div className="auth-heading">
+            <h3>Cadastro desativado</h3>
+            <p>
+              O acesso ao Sistema ADM é liberado apenas por autorização administrativa.
+              Para solicitar um novo acesso, fale com o responsável pelo sistema.
+            </p>
+          </div>
+
+          <div className="message-box" role="alert">
+            Usuários já autorizados devem entrar normalmente pela tela de login.
+          </div>
+
+          <div className="stack-actions">
+            <button
+              className="btn btn-primary btn-block"
+              type="button"
+              onClick={() => router.replace("/login")}
+            >
+              Voltar para login
+            </button>
+          </div>
         </div>
-      </AuthAccessCard>
+      </div>
     </AuthShell>
   );
 }

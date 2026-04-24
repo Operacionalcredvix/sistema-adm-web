@@ -12,7 +12,7 @@ type AuthAccessCardProps = {
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onSecondaryAction: () => void;
+  onSecondaryAction?: () => void;
   submitLabel?: string;
   loadingSubmitLabel?: string;
   secondaryPrompt?: string;
@@ -36,11 +36,13 @@ export function AuthAccessCard({
   onSecondaryAction,
   submitLabel = "Entrar",
   loadingSubmitLabel = "Entrando...",
-  secondaryPrompt = "Primeiro acesso neste projeto?",
-  secondaryActionLabel = "Criar acesso →",
+  secondaryPrompt,
+  secondaryActionLabel,
   loadingSecondaryLabel = "Processando...",
   children,
 }: AuthAccessCardProps) {
+  const showSecondaryAction = Boolean(onSecondaryAction && secondaryActionLabel);
+
   return (
     <div className="auth-panel auth-form-panel">
       <div className="auth-card">
@@ -90,20 +92,24 @@ export function AuthAccessCard({
           </div>
         </form>
 
-        <div className="auth-footer-box">
-          <p>{secondaryPrompt}</p>
-        </div>
+        {secondaryPrompt ? (
+          <div className="auth-footer-box">
+            <p>{secondaryPrompt}</p>
+          </div>
+        ) : null}
 
-        <div className="auth-switch">
-          <button
-            className="link-button"
-            type="button"
-            onClick={onSecondaryAction}
-            disabled={loading}
-          >
-            {loading ? loadingSecondaryLabel : secondaryActionLabel}
-          </button>
-        </div>
+        {showSecondaryAction ? (
+          <div className="auth-switch">
+            <button
+              className="link-button"
+              type="button"
+              onClick={onSecondaryAction}
+              disabled={loading}
+            >
+              {loading ? loadingSecondaryLabel : secondaryActionLabel}
+            </button>
+          </div>
+        ) : null}
 
         {message ? (
           <div className="message-box" role="alert">
