@@ -1,0 +1,226 @@
+/* Ajustes visuais do onboarding diario.
+   Mantem o modal dentro da identidade escura/amarela do Sistema ADM. */
+
+.modal-card:has(.daily-onboarding) {
+  width: min(880px, 100%);
+  border-color: rgba(247, 190, 33, 0.16);
+  background:
+    radial-gradient(circle at top left, rgba(247, 190, 33, 0.07), transparent 30%),
+    linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(7, 7, 7, 0.99));
+}
+
+.modal-card:has(.daily-onboarding) .modal-head {
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(247, 190, 33, 0.12);
+}
+
+.modal-card:has(.daily-onboarding) .modal-head h3 {
+  margin: 0;
+  color: #fff8df;
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+}
+
+.modal-card:has(.daily-onboarding) .modal-head p {
+  margin-top: 6px;
+  color: #ffd765;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.modal-card:has(.daily-onboarding) .modal-head .btn-icon {
+  min-height: 46px;
+  padding: 0 18px;
+  border-color: rgba(247, 190, 33, 0.42);
+  background:
+    linear-gradient(135deg, rgba(247, 190, 33, 0.16), rgba(255, 255, 255, 0.04));
+  color: #ffe08a;
+  box-shadow:
+    0 0 0 1px rgba(247, 190, 33, 0.12),
+    0 10px 26px rgba(247, 190, 33, 0.10);
+}
+
+.modal-card:has(.daily-onboarding) .modal-head .btn-icon:hover {
+  border-color: rgba(255, 210, 79, 0.70);
+  background:
+    linear-gradient(135deg, rgba(247, 190, 33, 0.25), rgba(255, 255, 255, 0.06));
+  color: #fff3c8;
+  box-shadow:
+    0 0 0 1px rgba(255, 210, 79, 0.18),
+    0 14px 30px rgba(247, 190, 33, 0.16);
+}
+
+.daily-onboarding {
+  display: grid;
+  gap: 18px;
+}
+
+.daily-onboarding .onboarding-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 18px;
+  align-items: stretch;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(247, 190, 33, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(247, 190, 33, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(247, 190, 33, 0.10), rgba(255, 255, 255, 0.025));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.onboarding-hero-copy {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+.onboarding-kicker,
+.onboarding-note-label {
+  width: fit-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 190, 33, 0.25);
+  background: rgba(247, 190, 33, 0.10);
+  color: #ffd765;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-hero h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.3vw, 2.15rem);
+  line-height: 1.05;
+  color: #fff8df;
+}
+
+.onboarding-hero p,
+.onboarding-priority-card p,
+.onboarding-focus-card small,
+.onboarding-note p,
+.onboarding-actions p {
+  margin: 0;
+  color: #a8a8a8;
+  line-height: 1.55;
+}
+
+.onboarding-focus-card {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(247, 190, 33, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(247, 190, 33, 0.25), transparent 42%),
+    linear-gradient(180deg, rgba(20, 18, 10, 0.95), rgba(11, 11, 9, 0.96));
+  box-shadow:
+    0 0 0 1px rgba(247, 190, 33, 0.08),
+    0 16px 34px rgba(247, 190, 33, 0.10);
+}
+
+.onboarding-focus-card span {
+  color: #c7b474;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-focus-card strong {
+  color: #ffe08a;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1.45rem;
+  line-height: 1.08;
+}
+
+.onboarding-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.onboarding-priority-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+}
+
+.onboarding-priority-card strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #f5f7f0;
+  font-size: 0.98rem;
+}
+
+.onboarding-priority-number {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(247, 190, 33, 0.28);
+  background: rgba(247, 190, 33, 0.12);
+  color: #ffd765;
+  font-weight: 900;
+  font-size: 0.8rem;
+  box-shadow: 0 0 18px rgba(247, 190, 33, 0.10);
+}
+
+.onboarding-note {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(247, 190, 33, 0.18);
+  background:
+    linear-gradient(135deg, rgba(247, 190, 33, 0.09), rgba(255, 255, 255, 0.02));
+}
+
+.onboarding-note div {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.onboarding-actions .btn {
+  min-width: 190px;
+}
+
+@media (max-width: 760px) {
+  .daily-onboarding .onboarding-hero,
+  .onboarding-priority-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-focus-card {
+    min-height: auto;
+  }
+
+  .onboarding-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .onboarding-actions .btn {
+    width: 100%;
+  }
+}
