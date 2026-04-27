@@ -38,6 +38,37 @@ const profileLabels: Record<CurrentUserProfileCode, string> = {
   erro: "Perfil não carregado",
 };
 
+export const userProfileOptions: Array<{
+  value: UserProfileCode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "super_admin",
+    label: "Super admin",
+    description: "Acesso total e administração de perfis.",
+  },
+  {
+    value: "admin_adm",
+    label: "Admin ADM",
+    description: "Acesso total ao módulo ADM atual.",
+  },
+  {
+    value: "operacao_adm",
+    label: "Operação ADM",
+    description: "Uso operacional do módulo ADM, sem gestão de permissões.",
+  },
+  {
+    value: "consulta",
+    label: "Consulta",
+    description: "Perfil preparado para visualização sem edição em etapa futura.",
+  },
+];
+
+export function getUserProfileLabel(value: CurrentUserProfileCode): string {
+  return profileLabels[value] ?? profileLabels.erro;
+}
+
 function normalizeProfileCode(value: string | null | undefined): UserProfileCode | "sem_perfil" {
   if (
     value === "super_admin" ||
@@ -149,6 +180,42 @@ export async function getUserProfileDiagnostics(): Promise<UserProfileDiagnostic
 
   return {
     data: (data ?? []) as UserProfileDiagnosticRow[],
+    errorMessage: "",
+  };
+}
+
+export type AdminUpdateUserProfileInput = {
+  authUserId: string;
+  perfil: UserProfileCode;
+  ativo: boolean;
+};
+
+type AdminUpdateUserProfileResult = {
+  ok: boolean;
+  errorMessage: string;
+};
+
+export async function adminUpdateUserProfile(
+  input: AdminUpdateUserProfileInput
+): Promise<AdminUpdateUserProfileResult> {
+  const { error } = await supabase.rpc("admin_atualizar_usuario_perfil", {
+    p_auth_user_id: input.authUserId,
+    p_perfil: input.perfil,
+    p_ativo: input.ativo,
+  });
+
+  if (error) {
+    console.warn("Perfil do usuário não atualizado:", error.message);
+    return {
+      ok: false,
+      errorMessage:
+        error.message ||
+        "Não foi possível atualizar o perfil. Confira se o SQL da versão 0.4.3 foi aplicado no Supabase.",
+    };
+  }
+
+  return {
+    ok: true,
     errorMessage: "",
   };
 }
