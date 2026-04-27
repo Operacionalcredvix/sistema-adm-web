@@ -39,9 +39,9 @@ const modeConfig: Record<
   }
 > = {
   operacional: {
-    title: "Alertas operacionais",
+    title: "Agenda operacional",
     description:
-      "Foco em vencidos e próximos vencimentos. Use esta visão para a rotina real da operação.",
+      "Vencidos e próximos vencimentos organizados por prioridade de ação.",
     allowedCodes: ["vencido", "vence_em_7_dias"],
   },
   cadastro: {
@@ -74,6 +74,22 @@ const getActionText = (alert: AlertRow) => {
 
   return "Abrir a ficha e revisar este item.";
 };
+
+const sortAgendaAlerts = (rows: AlertRow[]) =>
+  [...rows].sort((a, b) => {
+    const aluguelDiff = Number(isAluguelAlert(b)) - Number(isAluguelAlert(a));
+    if (aluguelDiff !== 0) return aluguelDiff;
+
+    const priorityDiff = a.prioridade_alerta - b.prioridade_alerta;
+    if (priorityDiff !== 0) return priorityDiff;
+
+    const dateA = a.data_referencia_alerta ?? "9999-12-31";
+    const dateB = b.data_referencia_alerta ?? "9999-12-31";
+
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+    return (a.nome_fantasia ?? "").localeCompare(b.nome_fantasia ?? "");
+  });
 
 export default function AlertasPage() {
   const router = useRouter();
@@ -175,6 +191,29 @@ export default function AlertasPage() {
     });
   }, [alerts, search, severityFilter, codeFilter, mode, operationalFocus]);
 
+  const agendaGroups = useMemo(() => {
+    return [
+      {
+        code: "vencido",
+        title: "Vencidos",
+        description: "Resolver primeiro. Estes itens já passaram da data de referência.",
+        tone: "danger",
+        items: sortAgendaAlerts(
+          filteredAlerts.filter((alert) => alert.alerta_codigo === "vencido")
+        ),
+      },
+      {
+        code: "vence_em_7_dias",
+        title: "Vencem em breve",
+        description: "Acompanhar agora para evitar que virem vencidos.",
+        tone: "warning",
+        items: sortAgendaAlerts(
+          filteredAlerts.filter((alert) => alert.alerta_codigo === "vence_em_7_dias")
+        ),
+      },
+    ];
+  }, [filteredAlerts]);
+
   const resumoOperacional = useMemo(() => {
     const rows = operationalAlerts;
     return {
@@ -219,12 +258,56 @@ export default function AlertasPage() {
 
   const isOperational = mode === "operacional";
 
+  const renderAlertCard = (alert: AlertRow, index: number) => (
+    <article
+      className={`priority-alert alert-card priority-${alert.prioridade_alerta}`}
+      key={`${alert.unidade_id}-${alert.tipo_nome}-${alert.alerta_codigo}-${index}`}
+    >
+      <div className="priority-alert-head">
+        <strong>{alert.nome_fantasia || "Unidade"}</strong>
+        <span className={`severity-tag severity-${alert.severidade_visual}`}>
+          {alert.severidade_visual}
+        </span>
+      </div>
+
+      <div className="alert-topics">
+        <span className="alert-topic-pill">
+          {alertCodeLabel[alert.alerta_codigo] || alert.alerta_codigo}
+        </span>
+        <span className="alert-topic-pill muted-pill">{alert.tipo_nome}</span>
+        {isAluguelAlert(alert) ? (
+          <span className="alert-topic-pill">Aluguel</span>
+        ) : null}
+      </div>
+
+      <p className="priority-alert-title">{alert.alerta_titulo}</p>
+      <p className="priority-alert-desc">{alert.alerta_descricao}</p>
+
+      <div className="message-box">
+        <strong>Ação esperada:</strong> {getActionText(alert)}
+      </div>
+
+      <div className="alert-card-footer">
+        <span className="priority-alert-date">
+          Data de referência: {formatDate(alert.data_referencia_alerta)}
+        </span>
+
+        <button
+          className="btn btn-primary"
+          onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
+        >
+          Abrir ficha para atualizar
+        </button>
+      </div>
+    </article>
+  );
+
   return (
     <AdminShell section="alertas">
       <AdminTopbar
         eyebrow="ALERTAS E PENDÊNCIAS"
         title="Alertas"
-        subtitle="Foco operacional em vencimentos reais, com pendências de cadastro separadas."
+        subtitle="Agenda operacional de vencimentos, com pendências de cadastro separadas."
         userEmail={userEmail}
         onLogout={handleLogout}
       />
@@ -273,11 +356,11 @@ export default function AlertasPage() {
 
         <div className="alerts-explainer">
           <strong>
-            {isOperational ? "Leitura recomendada para rotina." : "Leitura recomendada para saneamento."}
+            {isOperational ? "Agenda do que precisa de acompanhamento." : "Leitura recomendada para saneamento."}
           </strong>
           <p>
             {isOperational
-              ? "Aqui ficam vencidos e vencimentos próximos. Use o filtro de aluguéis para acompanhar o principal foco operacional do início do projeto."
+              ? "A lista abaixo é organizada por vencidos e vencimentos próximos. Dentro de cada grupo, aluguéis aparecem primeiro."
               : "Aqui aparecem dados faltantes. São importantes para completar a base, mas não devem ser confundidos com vencimento real."}
           </p>
         </div>
@@ -415,48 +498,31 @@ export default function AlertasPage() {
               : "Nenhuma pendência de cadastro encontrada com os filtros atuais."}
           </p>
         </section>
+      ) : isOperational ? (
+        <section className="group-section">
+          {agendaGroups.map((group) =>
+            group.items.length > 0 ? (
+              <section className="surface section-block" key={group.code}>
+                <div className="section-head compact-head">
+                  <div>
+                    <span className={`badge ${group.tone === "danger" ? "badge-danger" : "badge-warning"}`}>
+                      {group.items.length} item(ns)
+                    </span>
+                    <h2 className="section-title">{group.title}</h2>
+                    <p className="page-subtitle">{group.description}</p>
+                  </div>
+                </div>
+
+                <div className="alerts-grid">
+                  {group.items.map((alert, index) => renderAlertCard(alert, index))}
+                </div>
+              </section>
+            ) : null
+          )}
+        </section>
       ) : (
         <section className="alerts-grid">
-          {filteredAlerts.map((alert, index) => (
-            <article
-              className={`priority-alert alert-card priority-${alert.prioridade_alerta}`}
-              key={`${alert.unidade_id}-${alert.tipo_nome}-${alert.alerta_codigo}-${index}`}
-            >
-              <div className="priority-alert-head">
-                <strong>{alert.nome_fantasia || "Unidade"}</strong>
-                <span className={`severity-tag severity-${alert.severidade_visual}`}>
-                  {alert.severidade_visual}
-                </span>
-              </div>
-
-              <div className="alert-topics">
-                <span className="alert-topic-pill">
-                  {alertCodeLabel[alert.alerta_codigo] || alert.alerta_codigo}
-                </span>
-                <span className="alert-topic-pill muted-pill">{alert.tipo_nome}</span>
-              </div>
-
-              <p className="priority-alert-title">{alert.alerta_titulo}</p>
-              <p className="priority-alert-desc">{alert.alerta_descricao}</p>
-
-              <div className="message-box">
-                <strong>Ação esperada:</strong> {getActionText(alert)}
-              </div>
-
-              <div className="alert-card-footer">
-                <span className="priority-alert-date">
-                  Data de referência: {formatDate(alert.data_referencia_alerta)}
-                </span>
-
-                <button
-                  className="btn btn-primary"
-                  onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
-                >
-                  Abrir ficha para atualizar
-                </button>
-              </div>
-            </article>
-          ))}
+          {filteredAlerts.map((alert, index) => renderAlertCard(alert, index))}
         </section>
       )}
     </AdminShell>
