@@ -7,6 +7,7 @@ import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
+import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
 
 type AlertRow = {
   unidade_id: string;
@@ -96,6 +97,7 @@ export default function AlertasPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userProfile, setUserProfile] = useState<CurrentUserProfile | null>(null);
   const [search, setSearch] = useState("");
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [mode, setMode] = useState<AlertMode>("operacional");
@@ -114,7 +116,10 @@ export default function AlertasPage() {
         return;
       }
 
-      setUserEmail(session.user.email ?? "");
+      const email = session.user.email ?? "";
+      setUserEmail(email);
+      const profile = await getCurrentUserProfile(session.user.id, email);
+      setUserProfile(profile);
 
       const { data, error } = await supabase
         .from("vw_alertas_unidade_tela")
@@ -309,6 +314,7 @@ export default function AlertasPage() {
         title="Alertas"
         subtitle="Agenda operacional de vencimentos, com pendências de cadastro separadas."
         userEmail={userEmail}
+        userProfileLabel={userProfile?.perfil_label}
         onLogout={handleLogout}
       />
 

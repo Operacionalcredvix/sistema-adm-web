@@ -180,6 +180,7 @@ button, input, select, textarea { border: 0; }
 .empty-state,
 .auth-footer-box p,
 .user-badge,
+.user-profile-badge,
 .unit-meta,
 .detail-list,
 .muted-text,
@@ -547,6 +548,17 @@ textarea:focus {
   border-radius: 14px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.02);
+}
+
+.user-profile-badge {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--auth-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--auth-primary) 8%, transparent);
+  color: #fff1bf;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .page-title {

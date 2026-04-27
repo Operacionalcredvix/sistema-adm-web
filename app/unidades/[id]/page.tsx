@@ -13,6 +13,7 @@ import {
   AttachmentRecord,
 } from "@/components/unidades/item-attachments-modal";
 import { SectionEditModal } from "@/components/unidades/section-edit-modal";
+import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
 
 type FichaItem = {
   unidade_id: string;
@@ -79,6 +80,7 @@ export default function UnidadeDetalhePage() {
     {}
   );
   const [userEmail, setUserEmail] = useState("");
+  const [userProfile, setUserProfile] = useState<CurrentUserProfile | null>(null);
   const [userId, setUserId] = useState("");
   const [unitModalOpen, setUnitModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -110,8 +112,11 @@ export default function UnidadeDetalhePage() {
       return;
     }
 
-    setUserEmail(session.user.email ?? "");
+    const email = session.user.email ?? "";
+    setUserEmail(email);
     setUserId(session.user.id);
+    const profile = await getCurrentUserProfile(session.user.id, email);
+    setUserProfile(profile);
 
     const { data: fichaData, error: fichaError } = await supabase
       .from("vw_ficha_unidade")
@@ -520,6 +525,7 @@ export default function UnidadeDetalhePage() {
         title={unit?.nome_fantasia || "Unidade"}
         subtitle={unit?.razao_social || "—"}
         userEmail={userEmail}
+        userProfileLabel={userProfile?.perfil_label}
         onBack={() => router.push("/unidades")}
         backLabel="Voltar para unidades"
         actionsSlot={

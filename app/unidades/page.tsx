@@ -8,6 +8,7 @@ import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
 import { DailyOnboardingModal } from "@/components/app/daily-onboarding-modal";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
+import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
 
 type UnidadeLista = {
   unidade_id: string;
@@ -73,6 +74,7 @@ export default function UnidadesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userProfile, setUserProfile] = useState<CurrentUserProfile | null>(null);
   const [message, setMessage] = useState("");
   const [unidades, setUnidades] = useState<UnidadeLista[]>([]);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -120,6 +122,9 @@ export default function UnidadesPage() {
 
       const email = session.user.email ?? "";
       setUserEmail(email);
+      const profile = await getCurrentUserProfile(session.user.id, email);
+      setUserProfile(profile);
+
       maybeOpenDailyOnboarding(session.user.id || email || "usuario");
 
       const { data, error } = await supabase
@@ -218,6 +223,7 @@ export default function UnidadesPage() {
         title="Unidades"
         subtitle="Mapa operacional das fichas, vencimentos e pendências por unidade."
         userEmail={userEmail}
+        userProfileLabel={userProfile?.perfil_label}
         onLogout={handleLogout}
       />
 

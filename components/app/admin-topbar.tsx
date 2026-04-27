@@ -5,6 +5,7 @@ type AdminTopbarProps = {
   title: string;
   subtitle: string;
   userEmail?: string;
+  userProfileLabel?: string;
   onLogout?: () => void;
   onBack?: () => void;
   backLabel?: string;
@@ -37,6 +38,7 @@ export function AdminTopbar({
   title,
   subtitle,
   userEmail,
+  userProfileLabel,
   onLogout,
   onBack,
   backLabel = "Voltar",
@@ -56,6 +58,12 @@ export function AdminTopbar({
 
       <div className="topbar-right">
         {actionsSlot}
+        {userProfileLabel ? (
+          <div className="user-profile-badge">
+            Perfil: {userProfileLabel}
+          </div>
+        ) : null}
+
         {greetingName ? <div className="user-badge">Olá, {greetingName}!</div> : null}
 
         {onBack ? (
