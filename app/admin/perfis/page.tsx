@@ -177,7 +177,7 @@ export default function AdminPerfisPage() {
   };
 
   return (
-    <AdminShell section="unidades">
+    <AdminShell section="usuarios" userProfileCode={userProfile?.perfil}>
       <AdminTopbar
         eyebrow="ADMINISTRAÇÃO"
         title="Usuários e perfis"

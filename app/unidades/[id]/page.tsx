@@ -510,7 +510,7 @@ export default function UnidadeDetalhePage() {
 
   if (loading) {
     return (
-      <AdminShell section="ficha">
+      <AdminShell section="ficha" userProfileCode={userProfile?.perfil}>
         <section className="empty-state">
           <p>Carregando ficha da unidade...</p>
         </section>
@@ -519,7 +519,7 @@ export default function UnidadeDetalhePage() {
   }
 
   return (
-    <AdminShell section="ficha">
+    <AdminShell section="ficha" userProfileCode={userProfile?.perfil}>
       <AdminTopbar
         eyebrow="FICHA DA UNIDADE"
         title={unit?.nome_fantasia || "Unidade"}

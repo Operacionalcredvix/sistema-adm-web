@@ -215,7 +215,7 @@ export default function UnidadesPage() {
   };
 
   return (
-    <AdminShell section="unidades">
+    <AdminShell section="unidades" userProfileCode={userProfile?.perfil}>
       <DailyOnboardingModal open={onboardingOpen} onClose={closeDailyOnboarding} />
 
       <AdminTopbar

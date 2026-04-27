@@ -308,7 +308,7 @@ export default function AlertasPage() {
   );
 
   return (
-    <AdminShell section="alertas">
+    <AdminShell section="alertas" userProfileCode={userProfile?.perfil}>
       <AdminTopbar
         eyebrow="ALERTAS E PENDÊNCIAS"
         title="Alertas"

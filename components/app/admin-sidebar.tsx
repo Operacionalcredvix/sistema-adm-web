@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 type AdminSidebarProps = {
-  section: "unidades" | "ficha" | "alertas";
+  section: "unidades" | "ficha" | "alertas" | "usuarios";
+  userProfileCode?: string;
 };
 
 function BoxIcon() {
@@ -22,6 +23,17 @@ function BellIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true" className="nav-icon-svg">
       <path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="nav-icon-svg">
+      <path d="M16 11a4 4 0 1 0-8 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M5.5 20a6.5 6.5 0 0 1 13 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18.5 8.5h2.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M19.75 7.25v2.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -44,7 +56,9 @@ function ChevronIcon() {
   );
 }
 
-export function AdminSidebar({ section }: AdminSidebarProps) {
+export function AdminSidebar({ section, userProfileCode }: AdminSidebarProps) {
+  const canSeeUsersMenu = userProfileCode === "super_admin";
+
   return (
     <aside className="sidebar surface">
       <div className="sidebar-brand">
@@ -100,6 +114,32 @@ export function AdminSidebar({ section }: AdminSidebarProps) {
           </Link>
         </div>
       </div>
+
+      {canSeeUsersMenu ? (
+        <div className="sidebar-menu-block">
+          <span className="sidebar-group-title">Administração</span>
+
+          <div className="sidebar-nav-list">
+            <Link
+              href="/admin/perfis"
+              className={`nav-link module-link ${section === "usuarios" ? "active" : ""}`}
+            >
+              <span className="module-link-icon">
+                <UsersIcon />
+              </span>
+
+              <span className="module-link-copy">
+                <span className="nav-link-title">Usuários</span>
+                <span className="nav-link-subtitle">Perfis e acessos</span>
+              </span>
+
+              <span className="module-link-arrow">
+                <ChevronIcon />
+              </span>
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <div className="sidebar-settings-group product-group">
         <span className="sidebar-group-title">Sobre o produto</span>
