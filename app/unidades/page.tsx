@@ -22,6 +22,51 @@ type UnidadeLista = {
   proximo_prazo_relevante: string | null;
 };
 
+type UnitFilter = "todas" | "vencidos" | "proximos" | "pendencias" | "sem_prazo";
+
+const getNumber = (value: number | null) => value ?? 0;
+
+const getUnitOperationalStatus = (unidade: UnidadeLista) => {
+  const vencidos = getNumber(unidade.qtd_vencidos);
+  const proximos = getNumber(unidade.qtd_vence_em_7_dias);
+  const cadastro = getNumber(unidade.qtd_cadastro_incompleto);
+  const semAnexo = getNumber(unidade.qtd_sem_anexo);
+
+  if (vencidos > 0) {
+    return {
+      label: "Resolver vencido",
+      tone: "danger",
+      description: "Existe item vencido nesta unidade. Priorize a atualização da ficha.",
+      action: "Abrir ficha e atualizar o item vencido.",
+    };
+  }
+
+  if (proximos > 0) {
+    return {
+      label: "Acompanhar vencimento",
+      tone: "warning",
+      description: "Existe vencimento próximo. Confira se já foi pago ou programado.",
+      action: "Abrir ficha e revisar o próximo prazo.",
+    };
+  }
+
+  if (cadastro > 0 || semAnexo > 0) {
+    return {
+      label: "Completar cadastro",
+      tone: "neutral",
+      description: "Não há vencimento imediato, mas existem dados ou anexos pendentes.",
+      action: "Abrir ficha e completar informações quando possível.",
+    };
+  }
+
+  return {
+    label: "Em ordem",
+    tone: "success",
+    description: "Sem vencimentos ou pendências relevantes no momento.",
+    action: "Abrir ficha para consulta ou manutenção preventiva.",
+  };
+};
+
 export default function UnidadesPage() {
   const router = useRouter();
 
@@ -32,6 +77,7 @@ export default function UnidadesPage() {
   const [unidades, setUnidades] = useState<UnidadeLista[]>([]);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingStorageKey, setOnboardingStorageKey] = useState("");
+  const [unitFilter, setUnitFilter] = useState<UnitFilter>("todas");
 
   const getTodayKey = () => {
     const today = new Date();
@@ -103,34 +149,44 @@ export default function UnidadesPage() {
     bootstrap();
   }, [router]);
 
+  const resumo = useMemo(() => {
+    return {
+      total: unidades.length,
+      vencidos: unidades.filter((u) => getNumber(u.qtd_vencidos) > 0).length,
+      proximos: unidades.filter((u) => getNumber(u.qtd_vence_em_7_dias) > 0).length,
+      pendentes: unidades.filter(
+        (u) => getNumber(u.qtd_cadastro_incompleto) > 0 || getNumber(u.qtd_sem_anexo) > 0
+      ).length,
+      semPrazo: unidades.filter((u) => !u.proximo_prazo_relevante).length,
+    };
+  }, [unidades]);
+
   const filteredUnidades = useMemo(() => {
     const termo = search.trim().toLowerCase();
-
-    if (!termo) return unidades;
 
     return unidades.filter((unidade) => {
       const nomeFantasia = unidade.nome_fantasia?.toLowerCase() ?? "";
       const razaoSocial = unidade.razao_social?.toLowerCase() ?? "";
       const cnpj = unidade.cnpj?.toLowerCase() ?? "";
 
-      return (
+      const matchSearch =
+        !termo ||
         nomeFantasia.includes(termo) ||
         razaoSocial.includes(termo) ||
-        cnpj.includes(termo)
-      );
-    });
-  }, [search, unidades]);
+        cnpj.includes(termo);
 
-  const resumo = useMemo(() => {
-    return {
-      total: unidades.length,
-      vencidos: unidades.filter((u) => (u.qtd_vencidos ?? 0) > 0).length,
-      proximos: unidades.filter((u) => (u.qtd_vence_em_7_dias ?? 0) > 0).length,
-      pendentes: unidades.filter(
-        (u) => (u.qtd_cadastro_incompleto ?? 0) > 0 || (u.qtd_sem_anexo ?? 0) > 0
-      ).length,
-    };
-  }, [unidades]);
+      const matchFilter =
+        unitFilter === "todas" ||
+        (unitFilter === "vencidos" && getNumber(unidade.qtd_vencidos) > 0) ||
+        (unitFilter === "proximos" && getNumber(unidade.qtd_vence_em_7_dias) > 0) ||
+        (unitFilter === "pendencias" &&
+          (getNumber(unidade.qtd_cadastro_incompleto) > 0 ||
+            getNumber(unidade.qtd_sem_anexo) > 0)) ||
+        (unitFilter === "sem_prazo" && !unidade.proximo_prazo_relevante);
+
+      return matchSearch && matchFilter;
+    });
+  }, [search, unidades, unitFilter]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -160,7 +216,7 @@ export default function UnidadesPage() {
       <AdminTopbar
         eyebrow="GRUPO APIS"
         title="Unidades"
-        subtitle="Painel geral das fichas, enriquecimento cadastral e pontos de atenção por unidade."
+        subtitle="Mapa operacional das fichas, vencimentos e pendências por unidade."
         userEmail={userEmail}
         onLogout={handleLogout}
       />
@@ -175,10 +231,10 @@ export default function UnidadesPage() {
       <section className="surface section-block">
         <div className="section-head compact-head">
           <div>
-            <span className="eyebrow">PAINEL DE UNIDADES</span>
+            <span className="eyebrow">MAPA OPERACIONAL</span>
             <h2 className="section-title">Buscar unidade</h2>
             <p className="page-subtitle">
-              Clique em qualquer card de unidade para abrir a ficha completa.
+              Use a busca ou os filtros rápidos para encontrar unidades que precisam de ação.
             </p>
           </div>
         </div>
@@ -192,6 +248,44 @@ export default function UnidadesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+
+        <div className="alert-filter-chips">
+          <button
+            className={`filter-chip ${unitFilter === "todas" ? "active" : ""}`}
+            type="button"
+            onClick={() => setUnitFilter("todas")}
+          >
+            Todas ({resumo.total})
+          </button>
+          <button
+            className={`filter-chip ${unitFilter === "vencidos" ? "active" : ""}`}
+            type="button"
+            onClick={() => setUnitFilter("vencidos")}
+          >
+            Vencidos ({resumo.vencidos})
+          </button>
+          <button
+            className={`filter-chip ${unitFilter === "proximos" ? "active" : ""}`}
+            type="button"
+            onClick={() => setUnitFilter("proximos")}
+          >
+            Vencem em breve ({resumo.proximos})
+          </button>
+          <button
+            className={`filter-chip ${unitFilter === "pendencias" ? "active" : ""}`}
+            type="button"
+            onClick={() => setUnitFilter("pendencias")}
+          >
+            Pendências ({resumo.pendentes})
+          </button>
+          <button
+            className={`filter-chip ${unitFilter === "sem_prazo" ? "active" : ""}`}
+            type="button"
+            onClick={() => setUnitFilter("sem_prazo")}
+          >
+            Sem prazo ({resumo.semPrazo})
+          </button>
         </div>
       </section>
 
@@ -207,65 +301,89 @@ export default function UnidadesPage() {
         </section>
       ) : filteredUnidades.length === 0 ? (
         <section className="empty-state">
-          <p>Nenhuma unidade encontrada.</p>
+          <p>Nenhuma unidade encontrada com os filtros atuais.</p>
         </section>
       ) : (
         <section className="unit-grid">
-          {filteredUnidades.map((unidade) => (
-            <article
-              className="unit-card unit-card-clickable"
-              key={unidade.unidade_id}
-              onClick={() => openUnit(unidade.unidade_id)}
-              onKeyDown={(e) => onCardKeyDown(e, unidade.unidade_id)}
-              tabIndex={0}
-              role="button"
-              aria-label={`Abrir ficha da unidade ${unidade.nome_fantasia || unidade.razao_social || "unidade"}`}
-            >
-              <div className="unit-card-head">
-                <div>
-                  <h2>{unidade.nome_fantasia || "Sem nome fantasia"}</h2>
-                  <p>{unidade.razao_social || "Sem razão social"}</p>
+          {filteredUnidades.map((unidade) => {
+            const status = getUnitOperationalStatus(unidade);
+
+            return (
+              <article
+                className="unit-card unit-card-clickable"
+                key={unidade.unidade_id}
+                onClick={() => openUnit(unidade.unidade_id)}
+                onKeyDown={(e) => onCardKeyDown(e, unidade.unidade_id)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Abrir ficha da unidade ${unidade.nome_fantasia || unidade.razao_social || "unidade"}`}
+              >
+                <div className="unit-card-head">
+                  <div>
+                    <h2>{unidade.nome_fantasia || "Sem nome fantasia"}</h2>
+                    <p>{unidade.razao_social || "Sem razão social"}</p>
+                  </div>
+                  <span className={`priority-badge priority-${unidade.prioridade_lista || 5}`}>
+                    Prioridade {unidade.prioridade_lista || 5}
+                  </span>
                 </div>
-                <span className={`priority-badge priority-${unidade.prioridade_lista || 5}`}>
-                  Prioridade {unidade.prioridade_lista || 5}
-                </span>
-              </div>
 
-              <div className="detail-list">
-                <span><strong>CNPJ:</strong> {unidade.cnpj || "Não informado"}</span>
-                <span>
-                  <strong>Próximo prazo:</strong> {formatDate(unidade.proximo_prazo_relevante)}
-                </span>
-              </div>
+                <div className="alert-topics">
+                  <span
+                    className={`alert-topic-pill ${
+                      status.tone === "danger"
+                        ? "badge-danger"
+                        : status.tone === "warning"
+                        ? "badge-warning"
+                        : "muted-pill"
+                    }`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
 
-              <div className="alert-badges">
-                <span className="badge badge-danger">
-                  Vencidos: {unidade.qtd_vencidos || 0}
-                </span>
-                <span className="badge badge-warning">
-                  Vencem em breve: {unidade.qtd_vence_em_7_dias || 0}
-                </span>
-                <span className="badge badge-neutral">
-                  Cadastro incompleto: {unidade.qtd_cadastro_incompleto || 0}
-                </span>
-                <span className="badge badge-neutral">
-                  Sem anexo: {unidade.qtd_sem_anexo || 0}
-                </span>
-              </div>
+                <p className="priority-alert-desc">{status.description}</p>
 
-              <div className="card-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openUnit(unidade.unidade_id);
-                  }}
-                >
-                  Abrir ficha
-                </button>
-              </div>
-            </article>
-          ))}
+                <div className="detail-list">
+                  <span><strong>CNPJ:</strong> {unidade.cnpj || "Não informado"}</span>
+                  <span>
+                    <strong>Próximo prazo:</strong> {formatDate(unidade.proximo_prazo_relevante)}
+                  </span>
+                </div>
+
+                <div className="alert-badges">
+                  <span className="badge badge-danger">
+                    Vencidos: {unidade.qtd_vencidos || 0}
+                  </span>
+                  <span className="badge badge-warning">
+                    Vencem em breve: {unidade.qtd_vence_em_7_dias || 0}
+                  </span>
+                  <span className="badge badge-neutral">
+                    Cadastro incompleto: {unidade.qtd_cadastro_incompleto || 0}
+                  </span>
+                  <span className="badge badge-neutral">
+                    Sem anexo: {unidade.qtd_sem_anexo || 0}
+                  </span>
+                </div>
+
+                <div className="message-box">
+                  <strong>Próxima ação:</strong> {status.action}
+                </div>
+
+                <div className="card-actions">
+                  <button
+                    className="btn btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openUnit(unidade.unidade_id);
+                    }}
+                  >
+                    Abrir ficha
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
     </AdminShell>
