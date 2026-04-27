@@ -111,3 +111,44 @@ export async function getCurrentUserProfile(
     hasProfile: true,
   };
 }
+
+
+export type UserProfileDiagnosticStatus =
+  | "perfil_ativo"
+  | "perfil_inativo"
+  | "sem_perfil";
+
+export type UserProfileDiagnosticRow = {
+  auth_user_id: string;
+  email: string | null;
+  nome_exibicao: string | null;
+  perfil: UserProfileCode | null;
+  perfil_label: string;
+  ativo: boolean;
+  auth_criado_em: string | null;
+  ultimo_login_em: string | null;
+  status_vinculo: UserProfileDiagnosticStatus;
+};
+
+type UserProfileDiagnosticsResult = {
+  data: UserProfileDiagnosticRow[];
+  errorMessage: string;
+};
+
+export async function getUserProfileDiagnostics(): Promise<UserProfileDiagnosticsResult> {
+  const { data, error } = await supabase.rpc("admin_diagnostico_usuarios_perfis");
+
+  if (error) {
+    console.warn("Diagnóstico de usuários e perfis não carregado:", error.message);
+    return {
+      data: [],
+      errorMessage:
+        "Não foi possível carregar o diagnóstico de usuários e perfis. Confira se o SQL da versão 0.4.2 foi aplicado no Supabase.",
+    };
+  }
+
+  return {
+    data: (data ?? []) as UserProfileDiagnosticRow[],
+    errorMessage: "",
+  };
+}
