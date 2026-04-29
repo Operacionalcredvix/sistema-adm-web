@@ -16,6 +16,9 @@ export type EditableItem = {
   texto_principal: string | null;
   texto_secundario: string | null;
   identificador_externo: string | null;
+  onde_achar: string | null;
+  login_acesso: string | null;
+  senha_acesso: string | null;
   item_observacao: string | null;
 };
 
@@ -34,6 +37,9 @@ type ItemEditModalProps = {
     texto_principal: string | null;
     texto_secundario: string | null;
     identificador_externo: string | null;
+    onde_achar: string | null;
+    login_acesso: string | null;
+    senha_acesso: string | null;
     observacao: string | null;
   }) => Promise<void>;
 };
@@ -48,6 +54,9 @@ type FormState = {
   texto_principal: string;
   texto_secundario: string;
   identificador_externo: string;
+  onde_achar: string;
+  login_acesso: string;
+  senha_acesso: string;
   observacao: string;
 };
 
@@ -67,6 +76,9 @@ export function ItemEditModal({
     texto_principal: "",
     texto_secundario: "",
     identificador_externo: "",
+    onde_achar: "",
+    login_acesso: "",
+    senha_acesso: "",
     observacao: "",
   });
   const [loading, setLoading] = useState(false);
@@ -85,6 +97,9 @@ export function ItemEditModal({
       texto_principal: item.texto_principal ?? "",
       texto_secundario: item.texto_secundario ?? "",
       identificador_externo: item.identificador_externo ?? "",
+      onde_achar: item.onde_achar ?? "",
+      login_acesso: item.login_acesso ?? "",
+      senha_acesso: item.senha_acesso ?? "",
       observacao: item.item_observacao ?? "",
     });
     setMessage("");
@@ -107,23 +122,7 @@ export function ItemEditModal({
           ["observacao", "Observação"],
         ] as const;
       case "condominio":
-        return [
-          ["status_aplicacao", "Status"],
-          ["dia_vencimento", "Dia do vencimento"],
-          ["data_principal", "Último pagamento"],
-          ["valor_principal", "Valor atual"],
-          ["observacao", "Observação"],
-        ] as const;
       case "agua":
-        return [
-          ["status_aplicacao", "Status"],
-          ["dia_vencimento", "Dia do vencimento"],
-          ["data_principal", "Último pagamento"],
-          ["texto_principal", "CNPJ do fornecedor"],
-          ["texto_secundario", "Titular da conta"],
-          ["identificador_externo", "Código de inscrição"],
-          ["observacao", "Observação"],
-        ] as const;
       case "energia":
       case "internet":
       case "telefonia_fixa":
@@ -132,6 +131,9 @@ export function ItemEditModal({
           ["dia_vencimento", "Dia do vencimento"],
           ["data_principal", "Último pagamento"],
           ["identificador_externo", "Identificador da conta"],
+          ["onde_achar", "Onde achar"],
+          ["login_acesso", "Login"],
+          ["senha_acesso", "Senha"],
           ["observacao", "Observação"],
         ] as const;
       case "extintores":
@@ -208,6 +210,8 @@ export function ItemEditModal({
         ? "number"
         : field === "data_principal" || field === "data_secundaria"
         ? "date"
+        : field === "senha_acesso"
+        ? "password"
         : "text";
 
     return (
@@ -254,6 +258,9 @@ export function ItemEditModal({
         texto_principal: parseText(form.texto_principal),
         texto_secundario: parseText(form.texto_secundario),
         identificador_externo: parseText(form.identificador_externo),
+        onde_achar: parseText(form.onde_achar),
+        login_acesso: parseText(form.login_acesso),
+        senha_acesso: parseText(form.senha_acesso),
         observacao: parseText(form.observacao),
       });
       onClose();
