@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 
 export type EditableItem = {
@@ -16,6 +16,9 @@ export type EditableItem = {
   texto_principal: string | null;
   texto_secundario: string | null;
   identificador_externo: string | null;
+  onde_achar: string | null;
+  login_acesso: string | null;
+  senha_acesso: string | null;
   item_observacao: string | null;
 };
 
@@ -34,6 +37,9 @@ type ItemEditModalProps = {
     texto_principal: string | null;
     texto_secundario: string | null;
     identificador_externo: string | null;
+  onde_achar: string | null;
+  login_acesso: string | null;
+  senha_acesso: string | null;
     observacao: string | null;
   }) => Promise<void>;
 };
@@ -48,6 +54,9 @@ type FormState = {
   texto_principal: string;
   texto_secundario: string;
   identificador_externo: string;
+  onde_achar: string;
+  login_acesso: string;
+  senha_acesso: string;
   observacao: string;
 };
 
@@ -67,6 +76,9 @@ export function ItemEditModal({
     texto_principal: "",
     texto_secundario: "",
     identificador_externo: "",
+    onde_achar: "",
+    login_acesso: "",
+    senha_acesso: "",
     observacao: "",
   });
   const [loading, setLoading] = useState(false);
@@ -85,6 +97,9 @@ export function ItemEditModal({
       texto_principal: item.texto_principal ?? "",
       texto_secundario: item.texto_secundario ?? "",
       identificador_externo: item.identificador_externo ?? "",
+      onde_achar: item.onde_achar ?? "",
+      login_acesso: item.login_acesso ?? "",
+      senha_acesso: item.senha_acesso ?? "",
       observacao: item.item_observacao ?? "",
     });
     setMessage("");
@@ -113,6 +128,9 @@ export function ItemEditModal({
           ["data_principal", "Último pagamento"],
           ["valor_principal", "Valor atual"],
           ["observacao", "Observação"],
+          ["onde_achar", "Site / URL / local de acesso"],
+          ["login_acesso", "Login"],
+          ["senha_acesso", "Senha"],
         ] as const;
       case "agua":
         return [
@@ -123,6 +141,9 @@ export function ItemEditModal({
           ["texto_secundario", "Titular da conta"],
           ["identificador_externo", "Código de inscrição"],
           ["observacao", "Observação"],
+          ["onde_achar", "Site / URL / local de acesso"],
+          ["login_acesso", "Login"],
+          ["senha_acesso", "Senha"],
         ] as const;
       case "energia":
       case "internet":
@@ -133,6 +154,9 @@ export function ItemEditModal({
           ["data_principal", "Último pagamento"],
           ["identificador_externo", "Identificador da conta"],
           ["observacao", "Observação"],
+          ["onde_achar", "Site / URL / local de acesso"],
+          ["login_acesso", "Login"],
+          ["senha_acesso", "Senha"],
         ] as const;
       case "extintores":
         return [
@@ -208,9 +232,11 @@ export function ItemEditModal({
         ? "number"
         : field === "data_principal" || field === "data_secundaria"
         ? "date"
+        : field === "senha_acesso"
+        ? "password"
         : "text";
 
-    return (
+    const inputField = (
       <div className="field" key={field}>
         <label htmlFor={field}>{label}</label>
         <input
@@ -221,6 +247,22 @@ export function ItemEditModal({
         />
       </div>
     );
+
+    if (field === "onde_achar") {
+      return (
+        <Fragment key={field}>
+          <div className="field field-full">
+            <span className="eyebrow">ONDE ACHAR</span>
+            <p className="muted-text">
+              Dados de acesso da conta, boleto ou portal do fornecedor.
+            </p>
+          </div>
+          {inputField}
+        </Fragment>
+      );
+    }
+
+    return inputField;
   };
 
   const parseNumber = (value: string) => {
@@ -254,6 +296,9 @@ export function ItemEditModal({
         texto_principal: parseText(form.texto_principal),
         texto_secundario: parseText(form.texto_secundario),
         identificador_externo: parseText(form.identificador_externo),
+        onde_achar: parseText(form.onde_achar),
+        login_acesso: parseText(form.login_acesso),
+        senha_acesso: parseText(form.senha_acesso),
         observacao: parseText(form.observacao),
       });
       onClose();

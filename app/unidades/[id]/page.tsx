@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -38,6 +38,9 @@ type FichaItem = {
   texto_principal: string | null;
   texto_secundario: string | null;
   identificador_externo: string | null;
+  onde_achar: string | null;
+  login_acesso: string | null;
+  senha_acesso: string | null;
   item_observacao: string | null;
   total_anexos: number | null;
 };
@@ -145,7 +148,35 @@ export default function UnidadeDetalhePage() {
       return;
     }
 
-    const itemIds = ((fichaData ?? []) as FichaItem[]).map((item) => item.item_ficha_id);
+    let fichaRows = (fichaData ?? []) as FichaItem[];
+    const itemIds = fichaRows.map((item) => item.item_ficha_id);
+
+    if (itemIds.length > 0) {
+      const { data: accessData, error: accessError } = await supabase
+        .from("item_ficha")
+        .select("id, onde_achar, login_acesso, senha_acesso")
+        .in("id", itemIds);
+
+      if (accessError) {
+        console.warn("Campos de acesso dos itens não carregados:", accessError.message);
+      } else {
+        const accessByItemId = new Map(
+          ((accessData ?? []) as Array<{
+            id: string;
+            onde_achar: string | null;
+            login_acesso: string | null;
+            senha_acesso: string | null;
+          }>).map((row) => [row.id, row])
+        );
+
+        fichaRows = fichaRows.map((item) => ({
+          ...item,
+          onde_achar: accessByItemId.get(item.item_ficha_id)?.onde_achar ?? null,
+          login_acesso: accessByItemId.get(item.item_ficha_id)?.login_acesso ?? null,
+          senha_acesso: accessByItemId.get(item.item_ficha_id)?.senha_acesso ?? null,
+        }));
+      }
+    }
 
     let groupedAttachments: Record<string, AttachmentRecord[]> = {};
     if (itemIds.length > 0) {
@@ -165,7 +196,7 @@ export default function UnidadeDetalhePage() {
       }
     }
 
-    setItems((fichaData ?? []) as FichaItem[]);
+    setItems(fichaRows);
     setAlerts((alertData ?? []) as AlertaItem[]);
     setAttachmentsByItem(groupedAttachments);
     setLoading(false);
@@ -233,11 +264,17 @@ export default function UnidadeDetalhePage() {
     };
   };
 
+  const isHttpUrl = (value: string) => /^https?:\/\//i.test(value);
+
   const rowsForItem = (item: FichaItem) => {
-    const rows: Array<{ label: string; value: string }> = [];
-    const push = (label: string, value: string | number | null | undefined) => {
+    const rows: Array<{ label: string; value: string; isUrl?: boolean }> = [];
+    const push = (
+      label: string,
+      value: string | number | null | undefined,
+      options?: { isUrl?: boolean }
+    ) => {
       if (value === null || value === undefined || value === "") return;
-      rows.push({ label, value: String(value) });
+      rows.push({ label, value: String(value), isUrl: options?.isUrl });
     };
 
     switch (item.tipo_codigo) {
@@ -252,6 +289,9 @@ export default function UnidadeDetalhePage() {
         push("Dia do vencimento", item.dia_vencimento);
         push("Último pagamento", formatDate(item.data_principal));
         push("Valor atual", formatMoney(item.valor_principal));
+        push("Onde achar", item.onde_achar, { isUrl: true });
+        push("Login", item.login_acesso);
+        push("Senha", item.senha_acesso ? "Cadastrada" : null);
         break;
       case "agua":
         push("Dia do vencimento", item.dia_vencimento);
@@ -259,6 +299,9 @@ export default function UnidadeDetalhePage() {
         push("CNPJ do fornecedor", item.texto_principal);
         push("Titular da conta", item.texto_secundario);
         push("Código de inscrição", item.identificador_externo);
+        push("Onde achar", item.onde_achar, { isUrl: true });
+        push("Login", item.login_acesso);
+        push("Senha", item.senha_acesso ? "Cadastrada" : null);
         break;
       case "energia":
       case "internet":
@@ -266,6 +309,9 @@ export default function UnidadeDetalhePage() {
         push("Dia do vencimento", item.dia_vencimento);
         push("Último pagamento", formatDate(item.data_principal));
         push("Identificador", item.identificador_externo);
+        push("Onde achar", item.onde_achar, { isUrl: true });
+        push("Login", item.login_acesso);
+        push("Senha", item.senha_acesso ? "Cadastrada" : null);
         break;
       case "extintores":
         push("Quantidade", item.numero_principal);
@@ -344,6 +390,9 @@ export default function UnidadeDetalhePage() {
       texto_principal: item.texto_principal,
       texto_secundario: item.texto_secundario,
       identificador_externo: item.identificador_externo,
+      onde_achar: item.onde_achar,
+      login_acesso: item.login_acesso,
+      senha_acesso: item.senha_acesso,
       item_observacao: "item_observacao" in item ? item.item_observacao : null,
     });
     setItemModalOpen(true);
@@ -392,6 +441,9 @@ export default function UnidadeDetalhePage() {
     texto_principal: string | null;
     texto_secundario: string | null;
     identificador_externo: string | null;
+    onde_achar: string | null;
+    login_acesso: string | null;
+    senha_acesso: string | null;
     observacao: string | null;
   }) => {
     const { error } = await supabase
@@ -406,6 +458,9 @@ export default function UnidadeDetalhePage() {
         texto_principal: payload.texto_principal,
         texto_secundario: payload.texto_secundario,
         identificador_externo: payload.identificador_externo,
+        onde_achar: payload.onde_achar,
+        login_acesso: payload.login_acesso,
+        senha_acesso: payload.senha_acesso,
         observacao: payload.observacao,
       })
       .eq("id", payload.item_ficha_id);
@@ -752,7 +807,14 @@ export default function UnidadeDetalhePage() {
                     <div className="detail-list">
                       {rows.map((row) => (
                         <span key={`${item.tipo_item_id}-${row.label}`}>
-                          <strong>{row.label}:</strong> {row.value}
+                          <strong>{row.label}:</strong>{" "}
+                          {row.isUrl && isHttpUrl(row.value) ? (
+                            <a href={row.value} target="_blank" rel="noopener noreferrer">
+                              {row.value}
+                            </a>
+                          ) : (
+                            row.value
+                          )}
                         </span>
                       ))}
                     </div>

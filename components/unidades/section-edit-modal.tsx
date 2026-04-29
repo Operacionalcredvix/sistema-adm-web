@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { AttachmentRecord } from "@/components/unidades/item-attachments-modal";
@@ -19,6 +19,9 @@ type SectionFichaItem = {
   texto_principal: string | null;
   texto_secundario: string | null;
   identificador_externo: string | null;
+  onde_achar: string | null;
+  login_acesso: string | null;
+  senha_acesso: string | null;
   item_observacao: string | null;
 };
 
@@ -193,6 +196,9 @@ export function SectionEditModal({
                         texto_principal: item.texto_principal,
                         texto_secundario: item.texto_secundario,
                         identificador_externo: item.identificador_externo,
+                        onde_achar: item.onde_achar,
+                        login_acesso: item.login_acesso,
+                        senha_acesso: item.senha_acesso,
                         item_observacao: item.item_observacao,
                       })
                     }
