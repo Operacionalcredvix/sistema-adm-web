@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 
 export type EditableItem = {
@@ -196,6 +196,12 @@ export function ItemEditModal({
     }
   }, [item?.tipo_codigo]);
 
+  const isAccessField = (field: keyof FormState) =>
+    field === "onde_achar" || field === "login_acesso" || field === "senha_acesso";
+
+  const mainFields = fieldMap.filter(([field]) => !isAccessField(field));
+  const accessFields = fieldMap.filter(([field]) => isAccessField(field));
+
   const renderField = (field: keyof FormState, label: string) => {
     if (field === "status_aplicacao") {
       return (
@@ -247,20 +253,6 @@ export function ItemEditModal({
         />
       </div>
     );
-
-    if (field === "onde_achar") {
-      return (
-        <Fragment key={field}>
-          <div className="field field-full">
-            <span className="eyebrow">ONDE ACHAR</span>
-            <p className="muted-text">
-              Dados de acesso da conta, boleto ou portal do fornecedor.
-            </p>
-          </div>
-          {inputField}
-        </Fragment>
-      );
-    }
 
     return inputField;
   };
@@ -319,7 +311,33 @@ export function ItemEditModal({
       <form className="modal-form" onSubmit={handleSubmit}>
         <div className="modal-scroll-area">
           <div className="modal-grid">
-            {fieldMap.map(([field, label]) => renderField(field, label))}
+            {mainFields.map(([field, label]) => renderField(field, label))}
+
+            {accessFields.length > 0 ? (
+              <section className="access-fields-card" aria-label="Dados de acesso da conta">
+                <div className="access-fields-head">
+                  <span className="eyebrow">ONDE ACHAR</span>
+                  <p>Acesso da conta, boleto ou portal do fornecedor.</p>
+                </div>
+
+                <div className="access-fields-grid">
+                  {accessFields.map(([field, label]) => (
+                    <div
+                      className={`field ${field === "onde_achar" ? "access-site-field" : ""}`}
+                      key={field}
+                    >
+                      <label htmlFor={field}>{label}</label>
+                      <input
+                        id={field}
+                        type={field === "senha_acesso" ? "password" : "text"}
+                        value={form[field]}
+                        onChange={(e) => setField(field, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
 
           {message ? <div className="message-box">{message}</div> : null}
