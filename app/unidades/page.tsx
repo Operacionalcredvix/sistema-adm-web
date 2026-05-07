@@ -8,7 +8,7 @@ import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
 import { DailyOnboardingModal } from "@/components/app/daily-onboarding-modal";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
-import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
+import { getCachedCurrentUserProfile, getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";\nimport { AppLoadingState } from "@/components/app/app-loading-state";\nimport { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
 
 type UnidadeLista = {
   unidade_id: string;
@@ -23,7 +23,7 @@ type UnidadeLista = {
   proximo_prazo_relevante: string | null;
 };
 
-type UnitFilter = "todas" | "vencidos" | "proximos" | "pendencias" | "sem_prazo";
+type UnitFilter = "todas" | "vencidos" | "proximos" | "pendencias" | "sem_prazo";\n\ntype UnidadesCachePayload = {\n  unidades: UnidadeLista[];\n};
 
 const getNumber = (value: number | null) => value ?? 0;
 
@@ -122,6 +122,21 @@ export default function UnidadesPage() {
 
       const email = session.user.email ?? "";
       setUserEmail(email);
+      const cachedProfile = getCachedCurrentUserProfile(session.user.id);
+      if (cachedProfile) {
+        setUserProfile(cachedProfile);
+      }
+
+      const cacheKey = buildClientCacheKey("unidades-lista", session.user.id);
+      const cachedPayload = getCachedValue<UnidadesCachePayload>(cacheKey, {
+        maxAgeMs: CLIENT_CACHE_TTL.operationalPage,
+      });
+
+      if (cachedPayload) {
+        setUnidades(cachedPayload.unidades);
+        setLoading(false);
+      }
+
       const profile = await getCurrentUserProfile(session.user.id, email);
       setUserProfile(profile);
 
@@ -147,7 +162,9 @@ export default function UnidadesPage() {
         return;
       }
 
-      setUnidades((data ?? []) as UnidadeLista[]);
+      const rows = (data ?? []) as UnidadeLista[];
+      setUnidades(rows);
+      setCachedValue(cacheKey, { unidades: rows });
       setLoading(false);
     };
 
@@ -302,9 +319,10 @@ export default function UnidadesPage() {
       ) : null}
 
       {loading ? (
-        <section className="empty-state">
-          <p>Carregando unidades...</p>
-        </section>
+        <AppLoadingState
+          title="Preparando mapa operacional"
+          subtitle="Carregando unidades, vencimentos e pendências."
+        />
       ) : filteredUnidades.length === 0 ? (
         <section className="empty-state">
           <p>Nenhuma unidade encontrada com os filtros atuais.</p>

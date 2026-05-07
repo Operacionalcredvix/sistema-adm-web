@@ -7,7 +7,7 @@ import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { AdminShell } from "@/components/app/admin-shell";
 import { AdminTopbar } from "@/components/app/admin-topbar";
 import { UnitSummaryCard } from "@/components/unidades/unit-summary-card";
-import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
+import { getCachedCurrentUserProfile, getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";\nimport { AppLoadingState } from "@/components/app/app-loading-state";\nimport { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
 
 type AlertRow = {
   unidade_id: string;
@@ -22,7 +22,7 @@ type AlertRow = {
 };
 
 type AlertMode = "operacional" | "cadastro";
-type OperationalFocus = "todos" | "aluguel";
+type OperationalFocus = "todos" | "aluguel";\n\ntype AlertasCachePayload = {\n  alerts: AlertRow[];\n};
 
 const alertCodeLabel: Record<string, string> = {
   vencido: "Vencido",
@@ -118,6 +118,21 @@ export default function AlertasPage() {
 
       const email = session.user.email ?? "";
       setUserEmail(email);
+      const cachedProfile = getCachedCurrentUserProfile(session.user.id);
+      if (cachedProfile) {
+        setUserProfile(cachedProfile);
+      }
+
+      const cacheKey = buildClientCacheKey("alertas", session.user.id);
+      const cachedPayload = getCachedValue<AlertasCachePayload>(cacheKey, {
+        maxAgeMs: CLIENT_CACHE_TTL.operationalPage,
+      });
+
+      if (cachedPayload) {
+        setAlerts(cachedPayload.alerts);
+        setLoading(false);
+      }
+
       const profile = await getCurrentUserProfile(session.user.id, email);
       setUserProfile(profile);
 
@@ -141,7 +156,9 @@ export default function AlertasPage() {
         return;
       }
 
-      setAlerts((data ?? []) as AlertRow[]);
+      const rows = (data ?? []) as AlertRow[];
+      setAlerts(rows);
+      setCachedValue(cacheKey, { alerts: rows });
       setLoading(false);
     };
 
@@ -536,9 +553,10 @@ export default function AlertasPage() {
       ) : null}
 
       {loading ? (
-        <section className="empty-state">
-          <p>Carregando alertas...</p>
-        </section>
+        <AppLoadingState
+          title="Preparando central de pendências"
+          subtitle="Carregando vencidos, próximos prazos e cadastros pendentes."
+        />
       ) : filteredAlerts.length === 0 ? (
         <section className="empty-state">
           <p>

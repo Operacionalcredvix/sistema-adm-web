@@ -13,7 +13,7 @@ import {
   AttachmentRecord,
 } from "@/components/unidades/item-attachments-modal";
 import { SectionEditModal } from "@/components/unidades/section-edit-modal";
-import { getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";
+import { getCachedCurrentUserProfile, getCurrentUserProfile, CurrentUserProfile } from "@/lib/user-profile";\nimport { AppLoadingState } from "@/components/app/app-loading-state";\nimport { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
 
 type FichaItem = {
   unidade_id: string;
@@ -53,6 +53,12 @@ type AlertaItem = {
   severidade_visual: "alto" | "medio" | "baixo";
   prioridade_alerta: number;
   data_referencia_alerta: string | null;
+};
+
+type FichaCachePayload = {
+  items: FichaItem[];
+  alerts: AlertaItem[];
+  attachmentsByItem: Record<string, AttachmentRecord[]>;
 };
 
 const groupLabels: Record<string, string> = {
@@ -118,6 +124,23 @@ export default function UnidadeDetalhePage() {
     const email = session.user.email ?? "";
     setUserEmail(email);
     setUserId(session.user.id);
+    const cachedProfile = getCachedCurrentUserProfile(session.user.id);
+    if (cachedProfile) {
+      setUserProfile(cachedProfile);
+    }
+
+    const cacheKey = buildClientCacheKey("ficha-unidade", unidadeId, session.user.id);
+    const cachedPayload = getCachedValue<FichaCachePayload>(cacheKey, {
+      maxAgeMs: CLIENT_CACHE_TTL.operationalPage,
+    });
+
+    if (cachedPayload) {
+      setItems(cachedPayload.items);
+      setAlerts(cachedPayload.alerts);
+      setAttachmentsByItem(cachedPayload.attachmentsByItem);
+      setLoading(false);
+    }
+
     const profile = await getCurrentUserProfile(session.user.id, email);
     setUserProfile(profile);
 
@@ -196,9 +219,15 @@ export default function UnidadeDetalhePage() {
       }
     }
 
+    const alertRows = (alertData ?? []) as AlertaItem[];
     setItems(fichaRows);
-    setAlerts((alertData ?? []) as AlertaItem[]);
+    setAlerts(alertRows);
     setAttachmentsByItem(groupedAttachments);
+    setCachedValue(cacheKey, {
+      items: fichaRows,
+      alerts: alertRows,
+      attachmentsByItem: groupedAttachments,
+    });
     setLoading(false);
   };
 
@@ -623,9 +652,11 @@ export default function UnidadeDetalhePage() {
   if (loading) {
     return (
       <AdminShell section="ficha" userProfileCode={userProfile?.perfil}>
-        <section className="empty-state">
-          <p>Carregando ficha da unidade...</p>
-        </section>
+        <AppLoadingState
+          title="Preparando ficha da unidade"
+          subtitle="Carregando itens, alertas e anexos mais recentes."
+          rows={4}
+        />
       </AdminShell>
     );
   }

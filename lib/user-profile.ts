@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";\nimport { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
 
 export type UserProfileCode =
   | "super_admin"
@@ -97,6 +97,25 @@ function buildFallbackProfile(
   };
 }
 
+
+function getUserProfileCacheKey(authUserId: string) {
+  return buildClientCacheKey("user-profile", authUserId);
+}
+
+export function getCachedCurrentUserProfile(authUserId: string): CurrentUserProfile | null {
+  if (!authUserId) return null;
+
+  return getCachedValue<CurrentUserProfile>(getUserProfileCacheKey(authUserId), {
+    maxAgeMs: CLIENT_CACHE_TTL.userProfile,
+  });
+}
+
+function writeCachedCurrentUserProfile(profile: CurrentUserProfile) {
+  if (!profile.auth_user_id || profile.perfil === "erro") return;
+
+  setCachedValue(getUserProfileCacheKey(profile.auth_user_id), profile);
+}
+
 export async function getCurrentUserProfile(
   authUserId: string,
   fallbackEmail = ""
@@ -104,6 +123,8 @@ export async function getCurrentUserProfile(
   if (!authUserId) {
     return buildFallbackProfile("", fallbackEmail, "sem_perfil");
   }
+
+  const cachedProfile = getCachedCurrentUserProfile(authUserId);
 
   const { data, error } = await supabase
     .from("usuario_perfil")
@@ -113,15 +134,17 @@ export async function getCurrentUserProfile(
 
   if (error) {
     console.warn("Perfil do usuário não carregado:", error.message);
-    return buildFallbackProfile(authUserId, fallbackEmail, "erro");
+    return cachedProfile ?? buildFallbackProfile(authUserId, fallbackEmail, "erro");
   }
 
   if (!data) {
-    return buildFallbackProfile(authUserId, fallbackEmail, "sem_perfil");
+    const profile = buildFallbackProfile(authUserId, fallbackEmail, "sem_perfil");
+    writeCachedCurrentUserProfile(profile);
+    return profile;
   }
 
   if (data.ativo === false) {
-    return {
+    const profile: CurrentUserProfile = {
       auth_user_id: data.auth_user_id,
       email: data.email || fallbackEmail || null,
       perfil: "perfil_inativo",
@@ -129,11 +152,13 @@ export async function getCurrentUserProfile(
       ativo: false,
       hasProfile: true,
     };
+    writeCachedCurrentUserProfile(profile);
+    return profile;
   }
 
   const perfil = normalizeProfileCode(data.perfil);
 
-  return {
+  const profile: CurrentUserProfile = {
     auth_user_id: data.auth_user_id,
     email: data.email || fallbackEmail || null,
     perfil,
@@ -141,6 +166,8 @@ export async function getCurrentUserProfile(
     ativo: true,
     hasProfile: true,
   };
+  writeCachedCurrentUserProfile(profile);
+  return profile;
 }
 
 
