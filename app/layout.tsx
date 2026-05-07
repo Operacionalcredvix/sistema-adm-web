@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "./cta-overrides.css";
 import "./onboarding-overrides.css";
+import "./product-system.css";
 
 const inter = Inter({
   subsets: ["latin"],
