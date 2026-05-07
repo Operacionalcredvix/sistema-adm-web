@@ -1295,3 +1295,18 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* Sistema ADM 0.6.4 - Logo centralizada na sidebar */
+.sidebar-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-brand .sidebar-logo {
+  margin-left: auto;
+  margin-right: auto;
+}
