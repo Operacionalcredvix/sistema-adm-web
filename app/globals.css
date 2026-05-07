@@ -1907,3 +1907,77 @@ textarea:focus {
     padding: 0 12px;
   }
 }
+
+/* Sistema ADM 0.5.2 - Visualizacao e copia de senha no modal */
+.password-access-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.password-access-control input {
+  min-width: 0;
+}
+
+.password-access-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.password-icon-button,
+.password-copy-button {
+  min-height: 50px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.045);
+  color: var(--text);
+  font-weight: 800;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.password-icon-button {
+  min-width: 50px;
+  padding: 0 14px;
+  font-size: 1rem;
+}
+
+.password-copy-button {
+  min-width: 74px;
+  padding: 0 14px;
+  font-size: 0.84rem;
+}
+
+.password-icon-button:hover,
+.password-copy-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--auth-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--auth-primary) 7%, transparent);
+  transform: translateY(-1px);
+}
+
+.password-copy-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.password-copy-button.copied {
+  color: #ffe08a;
+  border-color: color-mix(in srgb, var(--auth-primary) 34%, transparent);
+  background: color-mix(in srgb, var(--auth-primary) 10%, transparent);
+}
+
+@media (max-width: 980px) {
+  .password-access-control {
+    grid-template-columns: 1fr;
+  }
+
+  .password-access-actions {
+    width: 100%;
+  }
+
+  .password-icon-button,
+  .password-copy-button {
+    flex: 1;
+  }
+}

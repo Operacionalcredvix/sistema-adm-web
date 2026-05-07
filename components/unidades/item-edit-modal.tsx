@@ -83,7 +83,8 @@ export function ItemEditModal({
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordCopied, setPasswordCopied] = useState(false);
   useEffect(() => {
     if (!item) return;
 
@@ -102,6 +103,8 @@ export function ItemEditModal({
       senha_acesso: item.senha_acesso ?? "",
       observacao: item.item_observacao ?? "",
     });
+    setShowPassword(false);
+    setPasswordCopied(false);
     setMessage("");
   }, [item]);
 
@@ -268,6 +271,19 @@ export function ItemEditModal({
     return trimmed ? trimmed : null;
   };
 
+  const handleCopyPassword = async () => {
+    const password = form.senha_acesso.trim();
+    if (!password) return;
+
+    try {
+      await navigator.clipboard.writeText(password);
+      setPasswordCopied(true);
+      window.setTimeout(() => setPasswordCopied(false), 1600);
+    } catch {
+      setMessage("Nao foi possivel copiar a senha. Selecione o campo e copie manualmente.");
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -327,12 +343,45 @@ export function ItemEditModal({
                       key={field}
                     >
                       <label htmlFor={field}>{label}</label>
-                      <input
-                        id={field}
-                        type={field === "senha_acesso" ? "password" : "text"}
-                        value={form[field]}
-                        onChange={(e) => setField(field, e.target.value)}
-                      />
+                      {field === "senha_acesso" ? (
+                        <div className="password-access-control">
+                          <input
+                            id={field}
+                            type={showPassword ? "text" : "password"}
+                            value={form[field]}
+                            onChange={(e) => setField(field, e.target.value)}
+                            autoComplete="off"
+                          />
+
+                          <div className="password-access-actions">
+                            <button
+                              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                              className="password-icon-button"
+                              onClick={() => setShowPassword((current) => !current)}
+                              title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                              type="button"
+                            >
+                              👁
+                            </button>
+
+                            <button
+                              className={`password-copy-button ${passwordCopied ? "copied" : ""}`}
+                              disabled={!form.senha_acesso.trim()}
+                              onClick={handleCopyPassword}
+                              type="button"
+                            >
+                              {passwordCopied ? "Copiado" : "Copiar"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          id={field}
+                          type="text"
+                          value={form[field]}
+                          onChange={(e) => setField(field, e.target.value)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
