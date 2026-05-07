@@ -1,248 +1,249 @@
-import { supabase } from "@/lib/supabase";\nimport { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
-
-export type UserProfileCode =
-  | "super_admin"
-  | "admin_adm"
-  | "operacao_adm"
-  | "consulta";
-
-export type CurrentUserProfileCode =
-  | UserProfileCode
-  | "sem_perfil"
-  | "perfil_inativo"
-  | "erro";
-
-export type CurrentUserProfile = {
-  auth_user_id: string;
-  email: string | null;
-  perfil: CurrentUserProfileCode;
-  perfil_label: string;
-  ativo: boolean;
-  hasProfile: boolean;
-};
-
-type UsuarioPerfilRow = {
-  auth_user_id: string;
-  email: string | null;
-  perfil: string | null;
-  ativo: boolean | null;
-};
-
-const profileLabels: Record<CurrentUserProfileCode, string> = {
-  super_admin: "Super admin",
-  admin_adm: "Admin ADM",
-  operacao_adm: "Operação ADM",
-  consulta: "Consulta",
-  sem_perfil: "Sem perfil vinculado",
-  perfil_inativo: "Perfil inativo",
-  erro: "Perfil não carregado",
-};
-
-export const userProfileOptions: Array<{
-  value: UserProfileCode;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "super_admin",
-    label: "Super admin",
-    description: "Acesso total e administração de perfis.",
-  },
-  {
-    value: "admin_adm",
-    label: "Admin ADM",
-    description: "Acesso total ao módulo ADM atual.",
-  },
-  {
-    value: "operacao_adm",
-    label: "Operação ADM",
-    description: "Uso operacional do módulo ADM, sem gestão de permissões.",
-  },
-  {
-    value: "consulta",
-    label: "Consulta",
-    description: "Perfil preparado para visualização sem edição em etapa futura.",
-  },
-];
-
-export function getUserProfileLabel(value: CurrentUserProfileCode): string {
-  return profileLabels[value] ?? profileLabels.erro;
-}
-
-function normalizeProfileCode(value: string | null | undefined): UserProfileCode | "sem_perfil" {
-  if (
-    value === "super_admin" ||
-    value === "admin_adm" ||
-    value === "operacao_adm" ||
-    value === "consulta"
-  ) {
-    return value;
-  }
-
-  return "sem_perfil";
-}
-
-function buildFallbackProfile(
-  authUserId: string,
-  fallbackEmail: string,
-  perfil: CurrentUserProfileCode
-): CurrentUserProfile {
-  return {
-    auth_user_id: authUserId,
-    email: fallbackEmail || null,
-    perfil,
-    perfil_label: profileLabels[perfil],
-    ativo: perfil !== "perfil_inativo",
-    hasProfile: false,
-  };
-}
-
-
-function getUserProfileCacheKey(authUserId: string) {
-  return buildClientCacheKey("user-profile", authUserId);
-}
-
-export function getCachedCurrentUserProfile(authUserId: string): CurrentUserProfile | null {
-  if (!authUserId) return null;
-
-  return getCachedValue<CurrentUserProfile>(getUserProfileCacheKey(authUserId), {
-    maxAgeMs: CLIENT_CACHE_TTL.userProfile,
-  });
-}
-
-function writeCachedCurrentUserProfile(profile: CurrentUserProfile) {
-  if (!profile.auth_user_id || profile.perfil === "erro") return;
-
-  setCachedValue(getUserProfileCacheKey(profile.auth_user_id), profile);
-}
-
-export async function getCurrentUserProfile(
-  authUserId: string,
-  fallbackEmail = ""
-): Promise<CurrentUserProfile> {
-  if (!authUserId) {
-    return buildFallbackProfile("", fallbackEmail, "sem_perfil");
-  }
-
-  const cachedProfile = getCachedCurrentUserProfile(authUserId);
-
-  const { data, error } = await supabase
-    .from("usuario_perfil")
-    .select("auth_user_id, email, perfil, ativo")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle<UsuarioPerfilRow>();
-
-  if (error) {
-    console.warn("Perfil do usuário não carregado:", error.message);
-    return cachedProfile ?? buildFallbackProfile(authUserId, fallbackEmail, "erro");
-  }
-
-  if (!data) {
-    const profile = buildFallbackProfile(authUserId, fallbackEmail, "sem_perfil");
-    writeCachedCurrentUserProfile(profile);
-    return profile;
-  }
-
-  if (data.ativo === false) {
-    const profile: CurrentUserProfile = {
-      auth_user_id: data.auth_user_id,
-      email: data.email || fallbackEmail || null,
-      perfil: "perfil_inativo",
-      perfil_label: profileLabels.perfil_inativo,
-      ativo: false,
-      hasProfile: true,
-    };
-    writeCachedCurrentUserProfile(profile);
-    return profile;
-  }
-
-  const perfil = normalizeProfileCode(data.perfil);
-
-  const profile: CurrentUserProfile = {
-    auth_user_id: data.auth_user_id,
-    email: data.email || fallbackEmail || null,
-    perfil,
-    perfil_label: profileLabels[perfil],
-    ativo: true,
-    hasProfile: true,
-  };
-  writeCachedCurrentUserProfile(profile);
-  return profile;
-}
-
-
-export type UserProfileDiagnosticStatus =
-  | "perfil_ativo"
-  | "perfil_inativo"
-  | "sem_perfil";
-
-export type UserProfileDiagnosticRow = {
-  auth_user_id: string;
-  email: string | null;
-  nome_exibicao: string | null;
-  perfil: UserProfileCode | null;
-  perfil_label: string;
-  ativo: boolean;
-  auth_criado_em: string | null;
-  ultimo_login_em: string | null;
-  status_vinculo: UserProfileDiagnosticStatus;
-};
-
-type UserProfileDiagnosticsResult = {
-  data: UserProfileDiagnosticRow[];
-  errorMessage: string;
-};
-
-export async function getUserProfileDiagnostics(): Promise<UserProfileDiagnosticsResult> {
-  const { data, error } = await supabase.rpc("admin_diagnostico_usuarios_perfis");
-
-  if (error) {
-    console.warn("Diagnóstico de usuários e perfis não carregado:", error.message);
-    return {
-      data: [],
-      errorMessage:
-        "Não foi possível carregar o diagnóstico de usuários e perfis. Confira se o SQL da versão 0.4.2 foi aplicado no Supabase.",
-    };
-  }
-
-  return {
-    data: (data ?? []) as UserProfileDiagnosticRow[],
-    errorMessage: "",
-  };
-}
-
-export type AdminUpdateUserProfileInput = {
-  authUserId: string;
-  perfil: UserProfileCode;
-  ativo: boolean;
-};
-
-type AdminUpdateUserProfileResult = {
-  ok: boolean;
-  errorMessage: string;
-};
-
-export async function adminUpdateUserProfile(
-  input: AdminUpdateUserProfileInput
-): Promise<AdminUpdateUserProfileResult> {
-  const { error } = await supabase.rpc("admin_atualizar_usuario_perfil", {
-    p_auth_user_id: input.authUserId,
-    p_perfil: input.perfil,
-    p_ativo: input.ativo,
-  });
-
-  if (error) {
-    console.warn("Perfil do usuário não atualizado:", error.message);
-    return {
-      ok: false,
-      errorMessage:
-        error.message ||
-        "Não foi possível atualizar o perfil. Confira se o SQL da versão 0.4.3 foi aplicado no Supabase.",
-    };
-  }
-
-  return {
-    ok: true,
-    errorMessage: "",
-  };
-}
+import { supabase } from "@/lib/supabase";
+import { buildClientCacheKey, CLIENT_CACHE_TTL, getCachedValue, setCachedValue } from "@/lib/client-cache";
+
+export type UserProfileCode =
+  | "super_admin"
+  | "admin_adm"
+  | "operacao_adm"
+  | "consulta";
+
+export type CurrentUserProfileCode =
+  | UserProfileCode
+  | "sem_perfil"
+  | "perfil_inativo"
+  | "erro";
+
+export type CurrentUserProfile = {
+  auth_user_id: string;
+  email: string | null;
+  perfil: CurrentUserProfileCode;
+  perfil_label: string;
+  ativo: boolean;
+  hasProfile: boolean;
+};
+
+type UsuarioPerfilRow = {
+  auth_user_id: string;
+  email: string | null;
+  perfil: string | null;
+  ativo: boolean | null;
+};
+
+const profileLabels: Record<CurrentUserProfileCode, string> = {
+  super_admin: "Super admin",
+  admin_adm: "Admin ADM",
+  operacao_adm: "Operação ADM",
+  consulta: "Consulta",
+  sem_perfil: "Sem perfil vinculado",
+  perfil_inativo: "Perfil inativo",
+  erro: "Perfil não carregado",
+};
+
+export const userProfileOptions: Array<{
+  value: UserProfileCode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "super_admin",
+    label: "Super admin",
+    description: "Acesso total e administração de perfis.",
+  },
+  {
+    value: "admin_adm",
+    label: "Admin ADM",
+    description: "Acesso total ao módulo ADM atual.",
+  },
+  {
+    value: "operacao_adm",
+    label: "Operação ADM",
+    description: "Uso operacional do módulo ADM, sem gestão de permissões.",
+  },
+  {
+    value: "consulta",
+    label: "Consulta",
+    description: "Perfil preparado para visualização sem edição em etapa futura.",
+  },
+];
+
+export function getUserProfileLabel(value: CurrentUserProfileCode): string {
+  return profileLabels[value] ?? profileLabels.erro;
+}
+
+function normalizeProfileCode(value: string | null | undefined): UserProfileCode | "sem_perfil" {
+  if (
+    value === "super_admin" ||
+    value === "admin_adm" ||
+    value === "operacao_adm" ||
+    value === "consulta"
+  ) {
+    return value;
+  }
+
+  return "sem_perfil";
+}
+
+function buildFallbackProfile(
+  authUserId: string,
+  fallbackEmail: string,
+  perfil: CurrentUserProfileCode
+): CurrentUserProfile {
+  return {
+    auth_user_id: authUserId,
+    email: fallbackEmail || null,
+    perfil,
+    perfil_label: profileLabels[perfil],
+    ativo: perfil !== "perfil_inativo",
+    hasProfile: false,
+  };
+}
+
+
+function getUserProfileCacheKey(authUserId: string) {
+  return buildClientCacheKey("user-profile", authUserId);
+}
+
+export function getCachedCurrentUserProfile(authUserId: string): CurrentUserProfile | null {
+  if (!authUserId) return null;
+
+  return getCachedValue<CurrentUserProfile>(getUserProfileCacheKey(authUserId), {
+    maxAgeMs: CLIENT_CACHE_TTL.userProfile,
+  });
+}
+
+function writeCachedCurrentUserProfile(profile: CurrentUserProfile) {
+  if (!profile.auth_user_id || profile.perfil === "erro") return;
+
+  setCachedValue(getUserProfileCacheKey(profile.auth_user_id), profile);
+}
+
+export async function getCurrentUserProfile(
+  authUserId: string,
+  fallbackEmail = ""
+): Promise<CurrentUserProfile> {
+  if (!authUserId) {
+    return buildFallbackProfile("", fallbackEmail, "sem_perfil");
+  }
+
+  const cachedProfile = getCachedCurrentUserProfile(authUserId);
+
+  const { data, error } = await supabase
+    .from("usuario_perfil")
+    .select("auth_user_id, email, perfil, ativo")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle<UsuarioPerfilRow>();
+
+  if (error) {
+    console.warn("Perfil do usuário não carregado:", error.message);
+    return cachedProfile ?? buildFallbackProfile(authUserId, fallbackEmail, "erro");
+  }
+
+  if (!data) {
+    const profile = buildFallbackProfile(authUserId, fallbackEmail, "sem_perfil");
+    writeCachedCurrentUserProfile(profile);
+    return profile;
+  }
+
+  if (data.ativo === false) {
+    const profile: CurrentUserProfile = {
+      auth_user_id: data.auth_user_id,
+      email: data.email || fallbackEmail || null,
+      perfil: "perfil_inativo",
+      perfil_label: profileLabels.perfil_inativo,
+      ativo: false,
+      hasProfile: true,
+    };
+    writeCachedCurrentUserProfile(profile);
+    return profile;
+  }
+
+  const perfil = normalizeProfileCode(data.perfil);
+
+  const profile: CurrentUserProfile = {
+    auth_user_id: data.auth_user_id,
+    email: data.email || fallbackEmail || null,
+    perfil,
+    perfil_label: profileLabels[perfil],
+    ativo: true,
+    hasProfile: true,
+  };
+  writeCachedCurrentUserProfile(profile);
+  return profile;
+}
+
+
+export type UserProfileDiagnosticStatus =
+  | "perfil_ativo"
+  | "perfil_inativo"
+  | "sem_perfil";
+
+export type UserProfileDiagnosticRow = {
+  auth_user_id: string;
+  email: string | null;
+  nome_exibicao: string | null;
+  perfil: UserProfileCode | null;
+  perfil_label: string;
+  ativo: boolean;
+  auth_criado_em: string | null;
+  ultimo_login_em: string | null;
+  status_vinculo: UserProfileDiagnosticStatus;
+};
+
+type UserProfileDiagnosticsResult = {
+  data: UserProfileDiagnosticRow[];
+  errorMessage: string;
+};
+
+export async function getUserProfileDiagnostics(): Promise<UserProfileDiagnosticsResult> {
+  const { data, error } = await supabase.rpc("admin_diagnostico_usuarios_perfis");
+
+  if (error) {
+    console.warn("Diagnóstico de usuários e perfis não carregado:", error.message);
+    return {
+      data: [],
+      errorMessage:
+        "Não foi possível carregar o diagnóstico de usuários e perfis. Confira se o SQL da versão 0.4.2 foi aplicado no Supabase.",
+    };
+  }
+
+  return {
+    data: (data ?? []) as UserProfileDiagnosticRow[],
+    errorMessage: "",
+  };
+}
+
+export type AdminUpdateUserProfileInput = {
+  authUserId: string;
+  perfil: UserProfileCode;
+  ativo: boolean;
+};
+
+type AdminUpdateUserProfileResult = {
+  ok: boolean;
+  errorMessage: string;
+};
+
+export async function adminUpdateUserProfile(
+  input: AdminUpdateUserProfileInput
+): Promise<AdminUpdateUserProfileResult> {
+  const { error } = await supabase.rpc("admin_atualizar_usuario_perfil", {
+    p_auth_user_id: input.authUserId,
+    p_perfil: input.perfil,
+    p_ativo: input.ativo,
+  });
+
+  if (error) {
+    console.warn("Perfil do usuário não atualizado:", error.message);
+    return {
+      ok: false,
+      errorMessage:
+        error.message ||
+        "Não foi possível atualizar o perfil. Confira se o SQL da versão 0.4.3 foi aplicado no Supabase.",
+    };
+  }
+
+  return {
+    ok: true,
+    errorMessage: "",
+  };
+}
