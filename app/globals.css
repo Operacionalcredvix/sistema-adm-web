@@ -2081,3 +2081,90 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Sistema ADM 0.5.6 - Hotfix menu lateralizado e entrada mais fluida */
+.dashboard-shell {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.workspace {
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  border-left: 0;
+  border-top: 0;
+  border-bottom: 0;
+  padding: 28px 22px;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--auth-primary) 8%, transparent), transparent 32%),
+    linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(5, 5, 5, 0.995));
+}
+
+.content-shell {
+  width: 100%;
+  max-width: 1240px;
+  padding: 28px 32px 40px;
+  animation: page-soft-enter 0.18s ease-out;
+}
+
+.sidebar-logo {
+  width: 150px;
+}
+
+.sidebar-brand {
+  padding-top: 0;
+}
+
+@keyframes page-soft-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1600px) {
+  .content-shell {
+    max-width: 1320px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .dashboard-shell {
+    padding: 0;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    min-height: auto;
+    border-radius: 0 0 24px 24px;
+    border-right: 0;
+  }
+
+  .content-shell {
+    max-width: none;
+    padding: 20px;
+  }
+}

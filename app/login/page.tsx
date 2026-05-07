@@ -8,6 +8,7 @@ import { AuthAccessCard } from "@/components/auth/auth-access-card";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { apisAuthTheme, themeToCssVars } from "@/lib/auth-theme";
+import { prewarmOperationalCache, prewarmOperationalCacheWithTimeout } from "@/lib/operational-prefetch";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function LoginPage() {
       } = await supabase.auth.getSession();
 
       if (session) {
+        void prewarmOperationalCache(session.user.id, session.user.email ?? "");
         router.replace("/unidades");
       }
     };
@@ -36,7 +38,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -51,6 +53,10 @@ export default function LoginPage() {
       );
       setLoading(false);
       return;
+    }
+
+    if (data.user) {
+      await prewarmOperationalCacheWithTimeout(data.user.id, data.user.email ?? email);
     }
 
     router.replace("/unidades");
