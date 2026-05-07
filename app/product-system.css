@@ -512,3 +512,474 @@ textarea:focus {
   .summary-grid { grid-template-columns: 1fr; }
   .content-shell { padding: 16px; }
 }
+
+/* Sistema ADM 0.6.2 - Suavizacao visual e organizacao das telas
+   Objetivo: reduzir agressividade visual, melhorar conforto de leitura
+   e organizar melhor a hierarquia sem alterar regras ou fluxos.
+*/
+
+:root {
+  --apis-bg: #0b0c0d;
+  --apis-bg-2: #101113;
+  --apis-panel: rgba(255, 255, 255, 0.045);
+  --apis-panel-2: rgba(255, 255, 255, 0.060);
+  --apis-panel-3: rgba(255, 255, 255, 0.080);
+  --apis-border: rgba(255, 255, 255, 0.090);
+  --apis-border-strong: rgba(255, 255, 255, 0.140);
+
+  --apis-text: #f1f1ec;
+  --apis-soft: #d2d5cd;
+  --apis-muted: #a4a8a0;
+  --apis-muted-2: #80857c;
+
+  --apis-yellow: #e8b640;
+  --apis-yellow-2: #c79021;
+  --apis-yellow-soft: rgba(232, 182, 64, 0.095);
+  --apis-yellow-border: rgba(232, 182, 64, 0.260);
+
+  --apis-danger: #e87575;
+  --apis-danger-soft: rgba(232, 117, 117, 0.105);
+  --apis-danger-border: rgba(232, 117, 117, 0.260);
+
+  --apis-warning-soft: rgba(232, 182, 64, 0.095);
+  --apis-warning-border: rgba(232, 182, 64, 0.240);
+
+  --apis-shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.16);
+  --apis-shadow-card: 0 14px 28px rgba(0, 0, 0, 0.20);
+  --apis-focus: 0 0 0 3px rgba(232, 182, 64, 0.12);
+}
+
+html,
+body {
+  background: var(--apis-bg);
+}
+
+body {
+  background:
+    radial-gradient(circle at 14% -10%, rgba(232, 182, 64, 0.035), transparent 24rem),
+    linear-gradient(180deg, #0d0e10 0%, #0a0b0c 100%);
+  color: var(--apis-text);
+}
+
+/* Escala geral: menos ruído, mais respiro */
+.content-shell {
+  max-width: 1180px;
+  padding: 22px 30px 40px;
+  gap: 14px;
+}
+
+.page-title {
+  font-size: clamp(1.34rem, 1.45vw, 1.66rem);
+  font-weight: 740;
+}
+
+.section-title {
+  font-size: 1.06rem;
+  font-weight: 720;
+}
+
+.page-subtitle {
+  font-size: 0.90rem;
+  max-width: 760px;
+}
+
+/* Sidebar menos agressiva */
+.sidebar {
+  background:
+    linear-gradient(180deg, rgba(16, 17, 19, 0.98), rgba(10, 11, 12, 0.99));
+  border-right-color: rgba(255, 255, 255, 0.075);
+}
+
+.sidebar-brand {
+  border-bottom-color: rgba(255, 255, 255, 0.070);
+}
+
+.module-link-icon {
+  color: var(--apis-yellow);
+  background: rgba(232, 182, 64, 0.075);
+  border-color: rgba(232, 182, 64, 0.160);
+}
+
+.nav-link {
+  min-height: 56px;
+  color: var(--apis-soft);
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.040);
+  border-color: rgba(255, 255, 255, 0.090);
+}
+
+.nav-link.active {
+  background: linear-gradient(90deg, rgba(232, 182, 64, 0.135), rgba(255, 255, 255, 0.018));
+  border-color: rgba(232, 182, 64, 0.280);
+}
+
+.nav-link.active::before {
+  background: var(--apis-yellow);
+  box-shadow: none;
+}
+
+.nav-link.active .module-link-icon {
+  color: #15120a;
+  background: linear-gradient(135deg, #e8bd50, #c89425);
+}
+
+/* Topbar como contexto leve, nao card dominante */
+.topbar {
+  min-height: 84px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.018)),
+    rgba(18, 19, 21, 0.84);
+  border-color: rgba(255, 255, 255, 0.080);
+  box-shadow: none;
+}
+
+.topbar .eyebrow {
+  color: var(--apis-yellow);
+  letter-spacing: 0.14em;
+}
+
+.user-profile-badge,
+.user-badge {
+  min-height: 34px;
+  background: rgba(255, 255, 255, 0.036);
+}
+
+/* Areas e cards: menos caixa preta, mais painel calmo */
+.surface,
+.section-block,
+.summary-card,
+.unit-card,
+.toolbar-card,
+.priority-alert,
+.priority-action-item,
+.modal-card,
+.empty-state,
+.auth-card {
+  border-color: rgba(255, 255, 255, 0.080);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.044), rgba(255, 255, 255, 0.026)),
+    rgba(18, 19, 21, 0.88);
+  box-shadow: var(--apis-shadow-soft);
+}
+
+.section-block {
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.section-head {
+  margin-bottom: 12px;
+}
+
+/* Métricas mais discretas */
+.summary-grid {
+  gap: 10px;
+}
+
+.summary-card {
+  min-height: 94px;
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.summary-card strong {
+  font-size: 1.42rem;
+  font-weight: 740;
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  color: var(--apis-muted);
+}
+
+.summary-card::after {
+  display: none;
+}
+
+.summary-card-primary,
+.summary-card-warning {
+  border-color: rgba(232, 182, 64, 0.220);
+  background:
+    linear-gradient(135deg, rgba(232, 182, 64, 0.085), rgba(255, 255, 255, 0.024)),
+    rgba(18, 19, 21, 0.90);
+}
+
+.summary-card-danger {
+  border-color: rgba(232, 117, 117, 0.230);
+  background:
+    linear-gradient(135deg, rgba(232, 117, 117, 0.085), rgba(255, 255, 255, 0.024)),
+    rgba(18, 19, 21, 0.90);
+}
+
+/* Busca, filtros e inputs menos gritantes */
+input,
+select,
+textarea {
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.050);
+  border-color: rgba(255, 255, 255, 0.105);
+  color: var(--apis-text);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: rgba(255, 255, 255, 0.150);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(232, 182, 64, 0.350);
+  box-shadow: var(--apis-focus);
+}
+
+.field label {
+  color: var(--apis-muted);
+  font-size: 0.76rem;
+}
+
+.filter-grid {
+  gap: 10px;
+}
+
+.alert-filter-chips,
+.mode-switch,
+.alert-badges,
+.alert-topics {
+  gap: 6px;
+}
+
+.filter-chip,
+.mode-chip,
+.mini-chip,
+.badge,
+.priority-badge,
+.severity-tag,
+.alert-topic-pill {
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.filter-chip,
+.mode-chip {
+  background: rgba(255, 255, 255, 0.036);
+  border-color: rgba(255, 255, 255, 0.085);
+}
+
+.filter-chip.active,
+.mode-chip.active {
+  color: #18140b;
+  background: linear-gradient(135deg, #e8bd50, #c89425);
+}
+
+/* Botões com menos agressividade */
+.btn {
+  min-height: 40px;
+  border-radius: 12px;
+  font-weight: 720;
+}
+
+.btn-primary {
+  color: #171207;
+  background: linear-gradient(135deg, #e8bd50, #c89425);
+  box-shadow: none;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 18px rgba(232, 182, 64, 0.12);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.040);
+  border-color: rgba(255, 255, 255, 0.100);
+}
+
+/* Cards de unidade mais calmos */
+.unit-grid {
+  gap: 10px;
+}
+
+.unit-card {
+  padding: 15px;
+  border-radius: 16px;
+  gap: 10px;
+}
+
+.unit-card-head h2 {
+  font-size: 1.02rem;
+}
+
+.unit-card-head p,
+.detail-list,
+.priority-alert-desc {
+  font-size: 0.82rem;
+}
+
+.unit-card-clickable:hover,
+.unit-card-clickable:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(232, 182, 64, 0.220);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.unit-card .message-box {
+  color: var(--apis-muted);
+}
+
+/* Alertas e prioridades mais escaneáveis */
+.priority-actions-panel {
+  gap: 12px;
+}
+
+.priority-action-list {
+  gap: 9px;
+}
+
+.priority-action-item {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  padding: 11px;
+  border-radius: 14px;
+}
+
+.priority-action-index {
+  width: 26px;
+  height: 26px;
+  color: var(--apis-yellow);
+}
+
+.priority-alert {
+  padding: 13px;
+  border-radius: 15px;
+}
+
+.priority-alert-title {
+  font-size: 0.94rem;
+}
+
+.priority-action-copy p,
+.priority-action-copy span,
+.priority-alert-date {
+  color: var(--apis-muted);
+}
+
+.priority-action-item .btn-primary,
+.priority-alert .btn-primary,
+.alert-card-footer .btn-primary {
+  color: #eec65c;
+  background: rgba(232, 182, 64, 0.070);
+  border-color: rgba(232, 182, 64, 0.220);
+}
+
+/* Badges com menos saturação */
+.badge-danger,
+.severity-alto {
+  color: #f0b8b8;
+  background: rgba(232, 117, 117, 0.090);
+  border-color: rgba(232, 117, 117, 0.220);
+}
+
+.badge-warning,
+.severity-medio {
+  color: #e9d19a;
+  background: rgba(232, 182, 64, 0.080);
+  border-color: rgba(232, 182, 64, 0.210);
+}
+
+.badge-neutral,
+.severity-baixo,
+.muted-pill {
+  color: var(--apis-soft);
+  background: rgba(255, 255, 255, 0.040);
+  border-color: rgba(255, 255, 255, 0.080);
+}
+
+/* Ficha e blocos de orientação */
+.action-guidance-card {
+  border-radius: 18px;
+}
+
+.action-guidance-layout {
+  gap: 14px;
+}
+
+.action-guidance-copy {
+  gap: 4px;
+}
+
+.action-guidance-metrics .mini-chip {
+  min-height: 29px;
+}
+
+/* Mensagens menos dominantes */
+.message-box,
+.alerts-explainer,
+.apis-notice {
+  border-color: rgba(255, 255, 255, 0.085);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--apis-muted);
+}
+
+/* Modais e auth mais leves */
+.modal-card,
+.auth-card {
+  border-radius: 22px;
+}
+
+.modal-head h3 {
+  font-size: 1.12rem;
+}
+
+.modal-actions {
+  border-top-color: rgba(255, 255, 255, 0.080);
+}
+
+/* Loading menos brilhante */
+.app-loading-state::after {
+  background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.028) 42%, transparent 72%);
+}
+
+.loading-orb {
+  border-color: rgba(232, 182, 64, 0.240);
+  background:
+    radial-gradient(circle, rgba(232, 182, 64, 0.180), transparent 58%),
+    rgba(255,255,255,0.035);
+  box-shadow: none;
+}
+
+/* Componentes base também seguem o tom suave */
+.apis-panel {
+  border-color: rgba(255, 255, 255, 0.080);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.044), rgba(255, 255, 255, 0.026)),
+    rgba(18, 19, 21, 0.88);
+}
+
+.apis-status-badge[data-tone="primary"] {
+  color: #eec65c;
+  border-color: rgba(232, 182, 64, 0.220);
+  background: rgba(232, 182, 64, 0.070);
+}
+
+/* A tela inteira deve respirar melhor em sessões longas */
+@media (min-width: 1280px) {
+  .content-shell {
+    max-width: 1160px;
+  }
+}
+
+@media (max-width: 820px) {
+  .content-shell {
+    padding: 18px;
+  }
+
+  .topbar {
+    min-height: auto;
+  }
+}
