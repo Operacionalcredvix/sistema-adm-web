@@ -229,6 +229,63 @@ export default function UnidadeDetalhePage() {
 
   const topAlerts = useMemo(() => alerts.slice(0, 6), [alerts]);
 
+  const unitActionSummary = useMemo(() => {
+    const vencidos = alerts.filter((a) => a.alerta_codigo === "vencido").length;
+    const proximos = alerts.filter((a) => a.alerta_codigo === "vence_em_7_dias").length;
+    const cadastro = alerts.filter((a) => a.alerta_codigo === "cadastro_incompleto").length;
+    const semAnexo = alerts.filter((a) => a.alerta_codigo === "sem_anexo").length;
+
+    if (vencidos > 0) {
+      return {
+        tone: "danger",
+        title: "Resolver vencidos primeiro",
+        description:
+          "Esta unidade tem itens que já passaram da data de referência. Priorize estes pontos antes de revisar cadastro ou anexos.",
+        vencidos,
+        proximos,
+        cadastro,
+        semAnexo,
+      };
+    }
+
+    if (proximos > 0) {
+      return {
+        tone: "warning",
+        title: "Planejar próximos vencimentos",
+        description:
+          "Há itens próximos do vencimento. Revise agora para evitar que virem urgência.",
+        vencidos,
+        proximos,
+        cadastro,
+        semAnexo,
+      };
+    }
+
+    if (cadastro > 0 || semAnexo > 0) {
+      return {
+        tone: "default",
+        title: "Completar informações da ficha",
+        description:
+          "Não há urgência de vencimento, mas existem dados ou anexos que deixam a ficha incompleta.",
+        vencidos,
+        proximos,
+        cadastro,
+        semAnexo,
+      };
+    }
+
+    return {
+      tone: "ok",
+      title: "Ficha sem ação urgente",
+      description:
+        "Nenhum alerta crítico encontrado nesta unidade. Use as seções abaixo para conferência ou atualização preventiva.",
+      vencidos,
+      proximos,
+      cadastro,
+      semAnexo,
+    };
+  }, [alerts]);
+
   const currentAttachments = selectedAttachmentItem
     ? attachmentsByItem[selectedAttachmentItem.item_ficha_id] ?? []
     : [];
@@ -607,24 +664,49 @@ export default function UnidadeDetalhePage() {
         </div>
       </section>
 
+      <section className={`surface section-block action-guidance-card action-guidance-${unitActionSummary.tone}`}>
+        <div className="action-guidance-layout">
+          <div className="action-guidance-copy">
+            <span className="eyebrow">PRÓXIMA AÇÃO</span>
+            <h2 className="section-title">{unitActionSummary.title}</h2>
+            <p>{unitActionSummary.description}</p>
+          </div>
+
+          <div className="action-guidance-metrics">
+            <span className="mini-chip mini-chip-strong">
+              Vencidos: {unitActionSummary.vencidos}
+            </span>
+            <span className="mini-chip">
+              Próximos: {unitActionSummary.proximos}
+            </span>
+            <span className="mini-chip">
+              Cadastro: {unitActionSummary.cadastro}
+            </span>
+            <span className="mini-chip">
+              Sem anexo: {unitActionSummary.semAnexo}
+            </span>
+          </div>
+        </div>
+      </section>
+
       <section className="summary-grid">
         <UnitSummaryCard
-          label="Vencidos"
+          label="Resolver agora"
           value={alerts.filter((a) => a.alerta_codigo === "vencido").length}
           tone="danger"
         />
         <UnitSummaryCard
-          label="Vencem em breve"
+          label="Planejar"
           value={alerts.filter((a) => a.alerta_codigo === "vence_em_7_dias").length}
           tone="warning"
         />
         <UnitSummaryCard
-          label="Cadastro incompleto"
+          label="Completar cadastro"
           value={alerts.filter((a) => a.alerta_codigo === "cadastro_incompleto").length}
           tone="default"
         />
         <UnitSummaryCard
-          label="Pendências documentais"
+          label="Anexar documentos"
           value={alerts.filter((a) => a.alerta_codigo === "sem_anexo").length}
           tone="primary"
         />
@@ -634,9 +716,9 @@ export default function UnidadeDetalhePage() {
         <div className="section-head compact-head">
           <div>
             <span className="eyebrow">SEÇÕES DA FICHA</span>
-            <h2 className="section-title">Escolha uma área para revisar</h2>
+            <h2 className="section-title">Revise por área operacional</h2>
             <p className="page-subtitle">
-              Abra a seção desejada para editar itens, anexos e pendências daquele bloco.
+              Comece pelas áreas com mais ações pendentes. Cada seção reúne edição, anexos e pendências do mesmo tema.
             </p>
           </div>
         </div>
@@ -659,11 +741,17 @@ export default function UnidadeDetalhePage() {
                   </span>
 
                   <div className="section-nav-metrics">
-                    <span className="mini-chip mini-chip-strong">Ação: {stats.itemsNeedingAction}</span>
+                    <span className="mini-chip mini-chip-strong">Ações: {stats.itemsNeedingAction}</span>
                     <span className="mini-chip">Alertas: {stats.itemsWithAlerts}</span>
                     <span className="mini-chip">Anexos: {stats.itemsWithAttachments}</span>
                     <span className="mini-chip">Sem anexo: {stats.itemsWithoutAttachments}</span>
                   </div>
+
+                  <span className="section-next-action">
+                    {stats.itemsNeedingAction > 0
+                      ? `Próxima ação: revisar ${stats.itemsNeedingAction} item(ns) pendente(s).`
+                      : "Sem ação imediata nesta seção."}
+                  </span>
                 </button>
 
                 <button
@@ -674,7 +762,7 @@ export default function UnidadeDetalhePage() {
                     setSectionModalOpen(true);
                   }}
                 >
-                  Abrir seção
+                  Revisar seção
                 </button>
               </div>
             );
@@ -692,9 +780,9 @@ export default function UnidadeDetalhePage() {
         <div className="section-head compact-head">
           <div>
             <span className="eyebrow">PONTOS DE ATENÇÃO</span>
-            <h2 className="section-title">Alertas desta unidade</h2>
+            <h2 className="section-title">O que resolver nesta unidade</h2>
             <p className="page-subtitle">
-              Itens que exigem revisão ou ação.
+              Lista curta dos pontos que precisam de revisão nesta unidade.
             </p>
           </div>
         </div>
@@ -750,7 +838,7 @@ export default function UnidadeDetalhePage() {
                   setSectionModalOpen(true);
                 }}
               >
-                Abrir seção
+                Revisar seção
               </button>
             </div>
 

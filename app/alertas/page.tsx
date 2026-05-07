@@ -40,15 +40,15 @@ const modeConfig: Record<
   }
 > = {
   operacional: {
-    title: "Agenda operacional",
+    title: "Pendências operacionais",
     description:
-      "Vencidos e próximos vencimentos organizados por prioridade de ação.",
+      "O que precisa ser resolvido ou acompanhado por prazo.",
     allowedCodes: ["vencido", "vence_em_7_dias"],
   },
   cadastro: {
-    title: "Pendências de cadastro",
+    title: "Completar cadastro",
     description:
-      "Itens incompletos ou sem anexo. Use esta visão para saneamento da base, não como urgência operacional.",
+      "Dados e anexos faltantes para deixar as fichas confiáveis.",
     allowedCodes: ["cadastro_incompleto", "sem_anexo"],
   },
 };
@@ -229,6 +229,10 @@ export default function AlertasPage() {
     };
   }, [operationalAlerts]);
 
+  const recommendedAlerts = useMemo(() => {
+    return sortAgendaAlerts(operationalAlerts).slice(0, 3);
+  }, [operationalAlerts]);
+
   const resumoCadastro = useMemo(() => {
     const rows = alerts.filter(
       (a) => a.alerta_codigo === "cadastro_incompleto" || a.alerta_codigo === "sem_anexo"
@@ -301,7 +305,7 @@ export default function AlertasPage() {
           className="btn btn-primary"
           onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
         >
-          Abrir ficha para atualizar
+          Resolver na ficha
         </button>
       </div>
     </article>
@@ -310,9 +314,9 @@ export default function AlertasPage() {
   return (
     <AdminShell section="alertas" userProfileCode={userProfile?.perfil}>
       <AdminTopbar
-        eyebrow="ALERTAS E PENDÊNCIAS"
-        title="Alertas"
-        subtitle="Agenda operacional de vencimentos, com pendências de cadastro separadas."
+        eyebrow="CENTRAL DE PENDÊNCIAS"
+        title="O que precisa de atenção"
+        subtitle="Veja vencidos, próximos vencimentos e cadastros que precisam ser completados."
         userEmail={userEmail}
         userProfileLabel={userProfile?.perfil_label}
         onLogout={handleLogout}
@@ -320,24 +324,63 @@ export default function AlertasPage() {
 
       {isOperational ? (
         <section className="summary-grid">
-          <UnitSummaryCard label="Total operacional" value={resumoOperacional.total} tone="primary" />
-          <UnitSummaryCard label="Vencidos" value={resumoOperacional.vencidos} tone="danger" />
-          <UnitSummaryCard label="Vencem em breve" value={resumoOperacional.proximos} tone="warning" />
-          <UnitSummaryCard label="Aluguéis em atenção" value={resumoOperacional.alugueis} tone="default" />
+          <UnitSummaryCard label="Para acompanhar" value={resumoOperacional.total} tone="primary" />
+          <UnitSummaryCard label="Resolver agora" value={resumoOperacional.vencidos} tone="danger" />
+          <UnitSummaryCard label="Planejar semana" value={resumoOperacional.proximos} tone="warning" />
+          <UnitSummaryCard label="Aluguéis" value={resumoOperacional.alugueis} tone="default" />
         </section>
       ) : (
         <section className="summary-grid">
-          <UnitSummaryCard label="Total de pendências" value={resumoCadastro.total} tone="primary" />
+          <UnitSummaryCard label="Para completar" value={resumoCadastro.total} tone="primary" />
           <UnitSummaryCard label="Cadastro incompleto" value={resumoCadastro.incompleto} tone="warning" />
           <UnitSummaryCard label="Sem anexo" value={resumoCadastro.semAnexo} tone="default" />
           <UnitSummaryCard label="Unidades pendentes" value={resumoCadastro.unidades} tone="danger" />
         </section>
       )}
 
+      {recommendedAlerts.length > 0 ? (
+        <section className="surface section-block priority-actions-panel">
+          <div className="priority-actions-head">
+            <div>
+              <span className="eyebrow">PRIORIDADES RECOMENDADAS</span>
+              <h2 className="section-title">Comece por estes itens</h2>
+              <p>
+                Lista curta gerada pelos vencidos e próximos vencimentos. Use para decidir o que atacar primeiro.
+              </p>
+            </div>
+          </div>
+
+          <div className="priority-action-list">
+            {recommendedAlerts.map((alert, index) => (
+              <article
+                className="priority-action-item"
+                key={`${alert.unidade_id}-${alert.tipo_nome}-${alert.alerta_codigo}-${index}`}
+              >
+                <span className="priority-action-index">{index + 1}</span>
+
+                <div className="priority-action-copy">
+                  <strong>{alert.nome_fantasia || "Unidade"} · {alert.tipo_nome}</strong>
+                  <span>{alert.alerta_titulo}</span>
+                  <p>{getActionText(alert)}</p>
+                </div>
+
+                <button
+                  className="btn btn-primary btn-small"
+                  type="button"
+                  onClick={() => router.push(`/unidades/${alert.unidade_id}`)}
+                >
+                  Abrir ficha
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="surface section-block">
         <div className="section-head compact-head">
           <div>
-            <span className="eyebrow">MODO DE LEITURA</span>
+            <span className="eyebrow">O QUE REVISAR</span>
             <h2 className="section-title">{modeConfig[mode].title}</h2>
             <p className="page-subtitle">{modeConfig[mode].description}</p>
           </div>
@@ -362,7 +405,7 @@ export default function AlertasPage() {
 
         <div className="alerts-explainer">
           <strong>
-            {isOperational ? "Agenda do que precisa de acompanhamento." : "Leitura recomendada para saneamento."}
+            {isOperational ? "Pendências que precisam de acompanhamento." : "Dados que precisam ser completados."}
           </strong>
           <p>
             {isOperational
@@ -398,7 +441,7 @@ export default function AlertasPage() {
           </div>
 
           <div className="field">
-            <label htmlFor="codeFilter">Tipo do alerta</label>
+            <label htmlFor="codeFilter">Tipo de pendência</label>
             <select
               id="codeFilter"
               value={codeFilter}
