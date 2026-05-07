@@ -2587,3 +2587,294 @@ textarea {
     min-height: auto;
   }
 }
+
+/* Sistema ADM 0.6.0 - Refinamento visual de produto */
+:root {
+  --product-bg: #050505;
+  --product-panel: rgba(255, 255, 255, 0.018);
+  --product-panel-strong: rgba(255, 255, 255, 0.032);
+  --product-border: rgba(255, 255, 255, 0.065);
+  --product-border-strong: rgba(255, 255, 255, 0.10);
+  --product-yellow-soft: color-mix(in srgb, var(--auth-primary) 10%, transparent);
+  --product-yellow-line: color-mix(in srgb, var(--auth-primary) 24%, transparent);
+  --product-yellow-text: #f5c84d;
+}
+
+/* Tipografia: mais sistema, menos peça de apresentação */
+body,
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.page-title,
+.section-title,
+.summary-card strong,
+.unit-card-head h2 {
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.page-title {
+  font-size: clamp(1.42rem, 1.65vw, 1.76rem);
+  font-weight: 760;
+  line-height: 1.16;
+}
+
+.section-title {
+  font-size: 1.18rem;
+  font-weight: 730;
+}
+
+.page-subtitle,
+.action-guidance-copy p,
+.priority-actions-head p,
+.unit-card-head p,
+.detail-list,
+.nav-link-subtitle {
+  line-height: 1.45;
+}
+
+/* Sidebar: mantém desenho, mas devolve contraste amarelo dos ícones */
+.sidebar {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--auth-primary) 6%, transparent), transparent 30%),
+    linear-gradient(180deg, rgba(9, 9, 9, 0.995), rgba(4, 4, 4, 1));
+}
+
+.sidebar-logo {
+  width: 132px;
+}
+
+.nav-link {
+  color: #d9dbd4;
+}
+
+.module-link-icon {
+  color: var(--auth-primary);
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--auth-primary) 12%, transparent), transparent 70%),
+    rgba(255, 255, 255, 0.025);
+  border-color: color-mix(in srgb, var(--auth-primary) 16%, transparent);
+}
+
+.nav-link:hover .module-link-icon {
+  color: #ffd968;
+  background: color-mix(in srgb, var(--auth-primary) 11%, transparent);
+  border-color: color-mix(in srgb, var(--auth-primary) 30%, transparent);
+}
+
+.nav-link.active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--auth-primary) 17%, transparent), rgba(255,255,255,0.018));
+  border-color: color-mix(in srgb, var(--auth-primary) 38%, transparent);
+}
+
+.nav-link.active .module-link-icon {
+  background: linear-gradient(135deg, var(--auth-primary), #d99c00);
+  color: #080808;
+}
+
+.nav-link.active .nav-link-title {
+  color: #fff3c2;
+}
+
+.nav-link.active .nav-link-subtitle {
+  color: #d8c99e;
+}
+
+.module-link-arrow {
+  color: var(--auth-primary);
+}
+
+/* Cabeçalho: mais limpo e mais institucional */
+.topbar {
+  min-height: 96px;
+  border-color: var(--product-border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.008)),
+    rgba(6, 6, 6, 0.96);
+}
+
+.topbar .eyebrow,
+.priority-actions-panel .eyebrow,
+.section-block .eyebrow {
+  color: var(--product-yellow-text);
+}
+
+.user-profile-badge {
+  color: var(--product-yellow-text);
+  border-color: color-mix(in srgb, var(--auth-primary) 22%, transparent);
+}
+
+/* Superfícies: menos glow, mais estrutura */
+.section-block,
+.summary-card,
+.unit-card,
+.priority-action-item,
+.priority-alert,
+.toolbar-card,
+.modal-card {
+  border-color: var(--product-border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.019), rgba(255,255,255,0.010)),
+    rgba(7, 7, 7, 0.96);
+}
+
+.section-block:hover,
+.unit-card:hover {
+  border-color: color-mix(in srgb, var(--auth-primary) 15%, var(--product-border));
+}
+
+/* Cards de métrica: reduzem ruído e preservam prioridade */
+.summary-card {
+  min-height: 108px;
+}
+
+.summary-card strong {
+  font-weight: 760;
+  font-size: 1.62rem;
+}
+
+.summary-label {
+  color: #a3a59f;
+}
+
+.summary-card-primary,
+.summary-card-warning {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--auth-primary) 10%, transparent), rgba(255,255,255,0.010)),
+    rgba(8,8,8,0.96);
+  border-color: color-mix(in srgb, var(--auth-primary) 22%, transparent);
+}
+
+.summary-card-danger {
+  background:
+    linear-gradient(135deg, rgba(255, 87, 87, 0.12), rgba(255,255,255,0.010)),
+    rgba(8,8,8,0.96);
+  border-color: rgba(255, 87, 87, 0.26);
+}
+
+.summary-card-default {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.044), rgba(255,255,255,0.010)),
+    rgba(8,8,8,0.96);
+}
+
+/* Ações: botões mais legíveis e menos "apagados" */
+.btn-primary {
+  background: linear-gradient(135deg, #f6c231, #d99c00);
+  color: #080808;
+  border-color: transparent;
+  font-weight: 760;
+}
+
+.btn-secondary {
+  color: #eceee5;
+  border-color: var(--product-border-strong);
+}
+
+.priority-action-item .btn-primary,
+.priority-alert .btn-primary,
+.alert-card-footer .btn-primary {
+  background: color-mix(in srgb, var(--auth-primary) 12%, transparent);
+  color: #ffd968;
+  border: 1px solid color-mix(in srgb, var(--auth-primary) 24%, transparent);
+  box-shadow: none;
+}
+
+.priority-action-item .btn-primary:hover,
+.priority-alert .btn-primary:hover,
+.alert-card-footer .btn-primary:hover {
+  background: color-mix(in srgb, var(--auth-primary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--auth-primary) 38%, transparent);
+  color: #ffe39a;
+}
+
+/* Listas de prioridade: foco no conteúdo, não no contorno */
+.priority-actions-panel {
+  gap: 14px;
+}
+
+.priority-action-item {
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  border-radius: 14px;
+}
+
+.priority-action-index {
+  color: var(--product-yellow-text);
+  background: transparent;
+  border-color: transparent;
+  font-weight: 780;
+}
+
+.priority-action-copy strong {
+  font-weight: 760;
+}
+
+/* Cards de unidade: menos cartaz, mais registro operacional */
+.unit-card-head h2 {
+  font-weight: 760;
+}
+
+.unit-card-clickable:hover .unit-card-head h2,
+.unit-card-clickable:focus-visible .unit-card-head h2 {
+  color: #ffe7a3;
+}
+
+.badge,
+.priority-badge,
+.severity-tag,
+.mini-chip {
+  font-weight: 730;
+}
+
+/* Campos e modais: aparência mais uniforme */
+input,
+select,
+textarea {
+  background: #101010;
+  border-color: var(--product-border-strong);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: color-mix(in srgb, var(--auth-primary) 38%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--auth-primary) 7%, transparent);
+}
+
+/* Reduz excesso de caixas amarelas em elementos que são só rótulo */
+.eyebrow {
+  font-weight: 780;
+}
+
+/* Ajuste fino da largura para leitura */
+.content-shell {
+  max-width: 1220px;
+}
+
+@media (min-width: 1500px) {
+  .content-shell {
+    max-width: 1280px;
+  }
+}
+
+@media (max-width: 980px) {
+  .priority-action-item {
+    grid-template-columns: 1fr;
+  }
+
+  .priority-action-index {
+    width: auto;
+    justify-content: flex-start;
+  }
+}
