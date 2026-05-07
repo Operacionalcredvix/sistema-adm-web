@@ -38,16 +38,6 @@ function UsersIcon() {
   );
 }
 
-function ProductIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="product-icon-svg">
-      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 8.3v3.9l2.5 1.7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M15.8 7.8 17.8 5.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="nav-chevron-svg">
@@ -70,7 +60,6 @@ export function AdminSidebar({ section, userProfileCode }: AdminSidebarProps) {
           className="sidebar-logo"
           priority
         />
-        <span className="brand-inline-subtitle">Sistema ADM</span>
       </div>
 
       <div className="sidebar-menu-block">
@@ -140,24 +129,6 @@ export function AdminSidebar({ section, userProfileCode }: AdminSidebarProps) {
           </div>
         </div>
       ) : null}
-
-      <div className="sidebar-settings-group product-group">
-        <span className="sidebar-group-title">Sobre o produto</span>
-
-        <div className="sidebar-note-card product-note-card">
-          <span className="product-note-icon">
-            <ProductIcon />
-          </span>
-
-          <div className="product-note-copy">
-            <strong>Visão do produto</strong>
-            <p>
-              Painel operacional consolidado para gestão de unidades,
-              pendências e prazos em um só lugar.
-            </p>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

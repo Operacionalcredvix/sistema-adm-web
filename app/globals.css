@@ -2168,3 +2168,20 @@ textarea:focus {
     padding: 20px;
   }
 }
+
+/* Sistema ADM 0.5.8 - Sidebar mais limpa */
+.sidebar-brand {
+  padding-bottom: 14px;
+}
+
+.sidebar-brand .sidebar-logo {
+  display: block;
+}
+
+.sidebar-menu-block:first-of-type {
+  padding-top: 2px;
+}
+
+.sidebar {
+  gap: 22px;
+}
